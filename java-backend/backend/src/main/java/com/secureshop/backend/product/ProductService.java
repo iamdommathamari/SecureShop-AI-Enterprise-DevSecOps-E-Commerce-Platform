@@ -30,12 +30,14 @@ public class ProductService {
     public List<Product> getAllProducts() {
         return products;
     }
+
     public Product getProductById(Long id) {
         return products.stream()
-            .filter(product -> product.getId().equals(id))
-            .findFirst()
-            .orElse(null);
+                .filter(product -> product.getId().equals(id))
+                .findFirst()
+                .orElse(null);
     }
+
     public Product createProduct(Product product) {
 
         product.setId((long) (products.size() + 1));
@@ -44,6 +46,7 @@ public class ProductService {
 
         return product;
     }
+
     public Product updateProduct(Long id, Product updatedProduct) {
 
         for (Product product : products) {
@@ -54,15 +57,16 @@ public class ProductService {
                 product.setDescription(updatedProduct.getDescription());
                 product.setPrice(updatedProduct.getPrice());
 
-            return product;
+                return product;
             }
         }
 
         return null;
     }
+
     public boolean deleteProduct(Long id) {
 
         return products.removeIf(
-            product -> product.getId().equals(id));
+                product -> product.getId().equals(id));
     }
 }
