@@ -18,4 +18,8 @@ public class ProductController {
     public List<Product> getProducts() {
         return service.getAllProducts();
     }
+    @GetMapping("/{id}")
+    public Product getProductById(@PathVariable Long id) {
+        return service.getProductById(id);
+    }
 }

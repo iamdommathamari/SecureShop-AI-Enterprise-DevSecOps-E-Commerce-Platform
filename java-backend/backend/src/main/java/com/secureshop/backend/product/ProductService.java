@@ -30,4 +30,10 @@ public class ProductService {
     public List<Product> getAllProducts() {
         return products;
     }
+    public Product getProductById(Long id) {
+        return products.stream()
+            .filter(product -> product.getId().equals(id))
+            .findFirst()
+            .orElse(null);
+    }
 }
