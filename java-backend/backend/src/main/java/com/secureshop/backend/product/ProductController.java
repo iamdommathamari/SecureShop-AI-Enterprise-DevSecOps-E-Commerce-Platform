@@ -18,32 +18,32 @@ public class ProductController {
     public List<Product> getProducts() {
         return service.getAllProducts();
     }
+
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable Long id) {
         return service.getProductById(id);
     }
+
     @PostMapping
-    public Product createProduct(
-        @RequestBody Product product) {
-            return service.createProduct(product);
-        }
+    public Product createProduct(@RequestBody Product product) {
+        return service.createProduct(product);
+    }
+
     @PutMapping("/{id}")
     public Product updateProduct(
-        @PathVariable Long id,
-        @RequestBody Product product) {
+            @PathVariable Long id,
+            @RequestBody Product product) {
 
         return service.updateProduct(id, product);
     }
+
     @DeleteMapping("/{id}")
-    public String deleteProduct(
-        @PathVariable Long id) {
+    public String deleteProduct(@PathVariable Long id) {
 
-            boolean deleted = service.deleteProduct(id);
+        boolean deleted = service.deleteProduct(id);
 
-            return deleted
+        return deleted
                 ? "Product deleted successfully"
                 : "Product not found";
-        }
-        
-    
+    }
 }

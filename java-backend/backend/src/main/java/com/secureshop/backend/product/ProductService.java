@@ -2,71 +2,54 @@ package com.secureshop.backend.product;
 
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class ProductService {
 
-    private final List<Product> products = new ArrayList<>();
+    private final ProductRepository repository;
 
-    public ProductService() {
-
-        products.add(
-                new Product(
-                        1L,
-                        "Laptop",
-                        "Gaming Laptop",
-                        85000.0));
-
-        products.add(
-                new Product(
-                        2L,
-                        "Phone",
-                        "Android Phone",
-                        25000.0));
+    public ProductService(ProductRepository repository) {
+        this.repository = repository;
     }
 
     public List<Product> getAllProducts() {
-        return products;
+        return repository.findAll();
     }
 
     public Product getProductById(Long id) {
-        return products.stream()
-                .filter(product -> product.getId().equals(id))
-                .findFirst()
+        return repository.findById(id)
                 .orElse(null);
     }
 
     public Product createProduct(Product product) {
-
-        product.setId((long) (products.size() + 1));
-
-        products.add(product);
-
-        return product;
+        return repository.save(product);
     }
 
     public Product updateProduct(Long id, Product updatedProduct) {
 
-        for (Product product : products) {
+        Product existingProduct = repository.findById(id)
+                .orElse(null);
 
-            if (product.getId().equals(id)) {
-
-                product.setName(updatedProduct.getName());
-                product.setDescription(updatedProduct.getDescription());
-                product.setPrice(updatedProduct.getPrice());
-
-                return product;
-            }
+        if (existingProduct == null) {
+            return null;
         }
 
-        return null;
+        existingProduct.setName(updatedProduct.getName());
+        existingProduct.setDescription(updatedProduct.getDescription());
+        existingProduct.setPrice(updatedProduct.getPrice());
+
+        return repository.save(existingProduct);
     }
 
     public boolean deleteProduct(Long id) {
 
-        return products.removeIf(
-                product -> product.getId().equals(id));
+        if (!repository.existsById(id)) {
+            return false;
+        }
+
+        repository.deleteById(id);
+
+        return true;
     }
 }
