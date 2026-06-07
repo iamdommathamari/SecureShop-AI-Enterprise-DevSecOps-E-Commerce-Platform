@@ -36,4 +36,12 @@ public class ProductService {
             .findFirst()
             .orElse(null);
     }
+    public Product createProduct(Product product) {
+
+        product.setId((long) (products.size() + 1));
+
+        products.add(product);
+
+        return product;
+    }
 }
