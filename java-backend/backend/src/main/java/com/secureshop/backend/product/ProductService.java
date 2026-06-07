@@ -44,4 +44,20 @@ public class ProductService {
 
         return product;
     }
+    public Product updateProduct(Long id, Product updatedProduct) {
+
+        for (Product product : products) {
+
+            if (product.getId().equals(id)) {
+
+                product.setName(updatedProduct.getName());
+                product.setDescription(updatedProduct.getDescription());
+                product.setPrice(updatedProduct.getPrice());
+
+            return product;
+        }
+    }
+
+    return null;
+}
 }
