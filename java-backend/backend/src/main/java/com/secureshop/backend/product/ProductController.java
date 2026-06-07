@@ -34,5 +34,15 @@ public class ProductController {
 
         return service.updateProduct(id, product);
     }
+    @DeleteMapping("/{id}")
+    public String deleteProduct(
+        @PathVariable Long id) {
+
+            boolean deleted = service.deleteProduct(id);
+
+            return deleted
+                ? "Product deleted successfully"
+                : "Product not found";
+        }
     
 }

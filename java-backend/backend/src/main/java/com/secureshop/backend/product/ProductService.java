@@ -55,9 +55,14 @@ public class ProductService {
                 product.setPrice(updatedProduct.getPrice());
 
             return product;
+            }
         }
-    }
 
-    return null;
-}
+        return null;
+    }
+    public boolean deleteProduct(Long id) {
+
+        return products.removeIf(
+            product -> product.getId().equals(id));
+    }
 }
