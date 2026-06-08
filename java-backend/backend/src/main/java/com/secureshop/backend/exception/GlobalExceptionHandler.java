@@ -29,4 +29,18 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(response);
     }
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse>
+        handleProductNotFound(
+            ProductNotFoundException ex) {
+
+        ErrorResponse response =
+            new ErrorResponse(
+                    HttpStatus.NOT_FOUND.value(),
+                    ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(response);
+    }
 }

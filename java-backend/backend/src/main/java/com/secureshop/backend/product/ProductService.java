@@ -2,6 +2,8 @@ package com.secureshop.backend.product;
 
 import org.springframework.stereotype.Service;
 
+import com.secureshop.backend.exception.ProductNotFoundException;
+
 import java.util.List;
 
 @Service
@@ -18,8 +20,11 @@ public class ProductService {
     }
 
     public Product getProductById(Long id) {
+
         return repository.findById(id)
-                .orElse(null);
+            .orElseThrow(
+                    () -> new ProductNotFoundException(id)
+            );
     }
 
     public Product createProduct(Product product) {
