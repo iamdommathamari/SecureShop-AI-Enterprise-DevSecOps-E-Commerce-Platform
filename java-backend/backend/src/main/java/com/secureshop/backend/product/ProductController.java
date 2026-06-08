@@ -1,7 +1,16 @@
 package com.secureshop.backend.product;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.secureshop.backend.dto.ProductRequestDTO;
+import com.secureshop.backend.dto.ProductResponseDTO;
+
+import jakarta.validation.Valid;
+import com.secureshop.backend.dto.ProductRequestDTO;
+import com.secureshop.backend.dto.ProductResponseDTO;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 @RestController
@@ -25,8 +34,26 @@ public class ProductController {
     }
 
     @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return service.createProduct(product);
+    public ResponseEntity<ProductResponseDTO> createProduct(
+        @Valid @RequestBody ProductRequestDTO request) {
+
+        Product product = new Product();
+
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+
+        Product savedProduct =
+            service.createProduct(product);
+
+        ProductResponseDTO response =
+            new ProductResponseDTO(
+                    savedProduct.getId(),
+                    savedProduct.getName(),
+                    savedProduct.getDescription(),
+                    savedProduct.getPrice());
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
