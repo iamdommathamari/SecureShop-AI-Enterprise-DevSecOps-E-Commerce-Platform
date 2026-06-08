@@ -47,14 +47,13 @@ public class ProductService {
         return repository.save(existingProduct);
     }
 
-    public boolean deleteProduct(Long id) {
+    public void deleteProduct(Long id) {
 
-        if (!repository.existsById(id)) {
-            return false;
-        }
+    Product product = repository.findById(id)
+            .orElseThrow(
+                    () -> new ProductNotFoundException(id)
+            );
 
-        repository.deleteById(id);
-
-        return true;
+        repository.delete(product);
     }
 }

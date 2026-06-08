@@ -1,5 +1,6 @@
 package com.secureshop.backend.product;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,7 +54,9 @@ public class ProductController {
                     savedProduct.getDescription(),
                     savedProduct.getPrice());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+        .status(HttpStatus.CREATED)
+        .body(response);
     }
 
     @PutMapping("/{id}")
@@ -65,12 +68,11 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public String deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(
+        @PathVariable Long id) {
 
-        boolean deleted = service.deleteProduct(id);
+            service.deleteProduct(id);
 
-        return deleted
-                ? "Product deleted successfully"
-                : "Product not found";
+        return ResponseEntity.noContent().build();
     }
 }
