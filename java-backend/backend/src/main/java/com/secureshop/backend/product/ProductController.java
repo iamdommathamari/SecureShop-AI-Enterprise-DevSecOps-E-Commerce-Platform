@@ -2,6 +2,7 @@ package com.secureshop.backend.product;
 
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
+import com.secureshop.backend.mapper.ProductMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
@@ -22,14 +22,17 @@ import java.util.stream.Collectors;
 public class ProductController {
 
     private final ProductService service;
+    private final ProductMapper mapper;
 
-    public ProductController(ProductService service) {
+    public ProductController(ProductService service,
+                             ProductMapper mapper) {
         this.service = service;
+        this.mapper = mapper;
     }
 
     @Operation(
             summary = "Get all products",
-            description = "Retrieve a list of all available products.",
+            description = "Retrieve all available products.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Products retrieved successfully")
             }
@@ -37,21 +40,17 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
 
-        List<ProductResponseDTO> products = service.getAllProducts()
+        List<ProductResponseDTO> response = service.getAllProducts()
                 .stream()
-                .map(product -> new ProductResponseDTO(
-                        product.getId(),
-                        product.getName(),
-                        product.getDescription(),
-                        product.getPrice()))
-                .collect(Collectors.toList());
+                .map(mapper::toResponse)
+                .toList();
 
-        return ResponseEntity.ok(products);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
             summary = "Get product by ID",
-            description = "Retrieve a single product using its ID.",
+            description = "Retrieve a product using its ID.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Product found"),
                     @ApiResponse(responseCode = "404", description = "Product not found")
@@ -63,13 +62,8 @@ public class ProductController {
 
         Product product = service.getProductById(id);
 
-        ProductResponseDTO response = new ProductResponseDTO(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                mapper.toResponse(product));
     }
 
     @Operation(
@@ -84,28 +78,17 @@ public class ProductController {
     public ResponseEntity<ProductResponseDTO> createProduct(
             @Valid @RequestBody ProductRequestDTO request) {
 
-        Product product = new Product();
-
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
-
-        Product savedProduct = service.createProduct(product);
-
-        ProductResponseDTO response = new ProductResponseDTO(
-                savedProduct.getId(),
-                savedProduct.getName(),
-                savedProduct.getDescription(),
-                savedProduct.getPrice());
+        Product savedProduct = service.createProduct(
+                mapper.toEntity(request));
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(response);
+                .body(mapper.toResponse(savedProduct));
     }
 
     @Operation(
             summary = "Update an existing product",
-            description = "Update product details using its ID.",
+            description = "Update an existing product using its ID.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Product updated successfully"),
                     @ApiResponse(responseCode = "400", description = "Validation failed"),
@@ -117,21 +100,12 @@ public class ProductController {
             @PathVariable Long id,
             @Valid @RequestBody ProductRequestDTO request) {
 
-        Product product = new Product();
+        Product updatedProduct = service.updateProduct(
+                id,
+                mapper.toEntity(request));
 
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
-
-        Product updatedProduct = service.updateProduct(id, product);
-
-        ProductResponseDTO response = new ProductResponseDTO(
-                updatedProduct.getId(),
-                updatedProduct.getName(),
-                updatedProduct.getDescription(),
-                updatedProduct.getPrice());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                mapper.toResponse(updatedProduct));
     }
 
     @Operation(
