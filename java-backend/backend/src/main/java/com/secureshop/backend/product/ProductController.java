@@ -2,7 +2,6 @@ package com.secureshop.backend.product;
 
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
-import com.secureshop.backend.mapper.ProductMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,12 +21,9 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService service;
-    private final ProductMapper mapper;
 
-    public ProductController(ProductService service,
-                             ProductMapper mapper) {
+    public ProductController(ProductService service) {
         this.service = service;
-        this.mapper = mapper;
     }
 
     @Operation(
@@ -40,12 +36,7 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
 
-        List<ProductResponseDTO> response = service.getAllProducts()
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(service.getAllProducts());
     }
 
     @Operation(
@@ -60,10 +51,8 @@ public class ProductController {
     public ResponseEntity<ProductResponseDTO> getProductById(
             @PathVariable Long id) {
 
-        Product product = service.getProductById(id);
-
         return ResponseEntity.ok(
-                mapper.toResponse(product));
+                service.getProductById(id));
     }
 
     @Operation(
@@ -78,12 +67,9 @@ public class ProductController {
     public ResponseEntity<ProductResponseDTO> createProduct(
             @Valid @RequestBody ProductRequestDTO request) {
 
-        Product savedProduct = service.createProduct(
-                mapper.toEntity(request));
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(mapper.toResponse(savedProduct));
+                .body(service.createProduct(request));
     }
 
     @Operation(
@@ -100,12 +86,8 @@ public class ProductController {
             @PathVariable Long id,
             @Valid @RequestBody ProductRequestDTO request) {
 
-        Product updatedProduct = service.updateProduct(
-                id,
-                mapper.toEntity(request));
-
         return ResponseEntity.ok(
-                mapper.toResponse(updatedProduct));
+                service.updateProduct(id, request));
     }
 
     @Operation(

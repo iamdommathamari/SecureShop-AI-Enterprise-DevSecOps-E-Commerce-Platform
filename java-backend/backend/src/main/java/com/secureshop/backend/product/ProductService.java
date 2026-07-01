@@ -1,16 +1,21 @@
 package com.secureshop.backend.product;
 
+import com.secureshop.backend.dto.ProductRequestDTO;
+import com.secureshop.backend.dto.ProductResponseDTO;
+
 import java.util.List;
 
 public interface ProductService {
 
-    List<Product> getAllProducts();
+    List<ProductResponseDTO> getAllProducts();
 
-    Product getProductById(Long id);
+    ProductResponseDTO getProductById(Long id);
 
-    Product createProduct(Product product);
+    ProductResponseDTO createProduct(ProductRequestDTO request);
 
-    Product updateProduct(Long id, Product product);
+    ProductResponseDTO updateProduct(
+            Long id,
+            ProductRequestDTO request);
 
     void deleteProduct(Long id);
 }
