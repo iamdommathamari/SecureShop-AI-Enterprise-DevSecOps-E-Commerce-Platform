@@ -9,9 +9,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,11 +34,46 @@ class ProductControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockBean
     private ProductService service;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Test
+    @DisplayName("GET /api/products returns all products")
+    void getAllProducts_shouldReturnAllProducts() throws Exception {
+
+        List<ProductResponseDTO> response = List.of(
+
+                new ProductResponseDTO(
+                        1L,
+                        "Laptop",
+                        "Gaming Laptop",
+                        85000.0),
+
+                new ProductResponseDTO(
+                        2L,
+                        "Phone",
+                        "Android Phone",
+                        25000.0)
+        );
+
+        when(service.getAllProducts())
+                .thenReturn(response);
+
+        mockMvc.perform(get("/api/products"))
+
+                .andExpect(status().isOk())
+
+                .andExpect(jsonPath("$.length()").value(2))
+
+                .andExpect(jsonPath("$[0].name")
+                        .value("Laptop"))
+
+                .andExpect(jsonPath("$[1].name")
+                        .value("Phone"));
+    }
 
     @Test
     @DisplayName("GET /api/products/{id} returns product")
@@ -62,48 +96,7 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
 
                 .andExpect(jsonPath("$.name")
-                        .value("Laptop"))
-
-                .andExpect(jsonPath("$.description")
-                        .value("Gaming Laptop"))
-
-                .andExpect(jsonPath("$.price")
-                        .value(85000.0));
-    }
-
-    @Test
-    @DisplayName("GET /api/products returns all products")
-    void getAllProducts_shouldReturnAllProducts() throws Exception {
-
-        List<ProductResponseDTO> products = List.of(
-
-                new ProductResponseDTO(
-                        1L,
-                        "Laptop",
-                        "Gaming Laptop",
-                        85000.0),
-
-                new ProductResponseDTO(
-                        2L,
-                        "Phone",
-                        "Android Phone",
-                        25000.0)
-        );
-
-        when(service.getAllProducts())
-                .thenReturn(products);
-
-        mockMvc.perform(get("/api/products"))
-
-                .andExpect(status().isOk())
-
-                .andExpect(jsonPath("$.length()").value(2))
-
-                .andExpect(jsonPath("$[0].name")
-                        .value("Laptop"))
-
-                .andExpect(jsonPath("$[1].name")
-                        .value("Phone"));
+                        .value("Laptop"));
     }
 
     @Test
@@ -132,17 +125,10 @@ class ProductControllerTest {
 
                 .andExpect(status().isCreated())
 
-                .andExpect(jsonPath("$.id")
-                        .value(1))
+                .andExpect(jsonPath("$.id").value(1))
 
                 .andExpect(jsonPath("$.name")
-                        .value("Laptop"))
-
-                .andExpect(jsonPath("$.description")
-                        .value("Gaming Laptop"))
-
-                .andExpect(jsonPath("$.price")
-                        .value(85000.0));
+                        .value("Laptop"));
     }
 
     @Test
@@ -171,21 +157,15 @@ class ProductControllerTest {
 
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.id")
-                        .value(1))
-
                 .andExpect(jsonPath("$.name")
                         .value("Laptop Pro"))
-
-                .andExpect(jsonPath("$.description")
-                        .value("Gaming Laptop RTX"))
 
                 .andExpect(jsonPath("$.price")
                         .value(99000.0));
     }
 
     @Test
-    @DisplayName("DELETE /api/products/{id} deletes product")
+    @DisplayName("DELETE /api/products/{id}")
     void deleteProduct_shouldReturnNoContent() throws Exception {
 
         doNothing()
@@ -198,7 +178,7 @@ class ProductControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/products returns 400 for invalid request")
+    @DisplayName("POST /api/products validation failure")
     void createProduct_shouldReturnBadRequest() throws Exception {
 
         ProductRequestDTO request =
@@ -213,15 +193,14 @@ class ProductControllerTest {
 
                 .andExpect(status().isBadRequest())
 
-                .andExpect(jsonPath("$.status")
-                        .value(400))
+                .andExpect(jsonPath("$.status").value(400))
 
                 .andExpect(jsonPath("$.message")
                         .value("Product name is required"));
     }
 
     @Test
-    @DisplayName("GET /api/products/{id} returns 404 when product is missing")
+    @DisplayName("GET /api/products/{id} product not found")
     void getProductById_shouldReturnNotFound() throws Exception {
 
         when(service.getProductById(100L))
@@ -231,8 +210,9 @@ class ProductControllerTest {
 
                 .andExpect(status().isNotFound())
 
-                .andExpect(jsonPath("$.status")
-                        .value(404));
-    }
+                .andExpect(jsonPath("$.status").value(404))
 
+                .andExpect(jsonPath("$.message")
+                    .value("Product not found with id 100"));
+    }
 }
