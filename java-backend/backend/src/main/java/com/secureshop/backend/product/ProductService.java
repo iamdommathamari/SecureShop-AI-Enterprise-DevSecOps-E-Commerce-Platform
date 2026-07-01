@@ -1,59 +1,16 @@
 package com.secureshop.backend.product;
 
-import org.springframework.stereotype.Service;
-
-import com.secureshop.backend.exception.ProductNotFoundException;
-
 import java.util.List;
 
-@Service
-public class ProductService {
+public interface ProductService {
 
-    private final ProductRepository repository;
+    List<Product> getAllProducts();
 
-    public ProductService(ProductRepository repository) {
-        this.repository = repository;
-    }
+    Product getProductById(Long id);
 
-    public List<Product> getAllProducts() {
-        return repository.findAll();
-    }
+    Product createProduct(Product product);
 
-    public Product getProductById(Long id) {
+    Product updateProduct(Long id, Product product);
 
-        return repository.findById(id)
-            .orElseThrow(
-                    () -> new ProductNotFoundException(id)
-            );
-    }
-
-    public Product createProduct(Product product) {
-        return repository.save(product);
-    }
-
-    public Product updateProduct(Long id, Product updatedProduct) {
-
-        Product existingProduct = repository.findById(id)
-                .orElse(null);
-
-        if (existingProduct == null) {
-            return null;
-        }
-
-        existingProduct.setName(updatedProduct.getName());
-        existingProduct.setDescription(updatedProduct.getDescription());
-        existingProduct.setPrice(updatedProduct.getPrice());
-
-        return repository.save(existingProduct);
-    }
-
-    public void deleteProduct(Long id) {
-
-    Product product = repository.findById(id)
-            .orElseThrow(
-                    () -> new ProductNotFoundException(id)
-            );
-
-        repository.delete(product);
-    }
+    void deleteProduct(Long id);
 }
