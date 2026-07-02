@@ -1,31 +1,32 @@
 package com.secureshop.backend.product;
 
-import com.secureshop.backend.category.Category;
 import jakarta.persistence.*;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
+@Entity
+@Table(name = "products")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "products")
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
-    private String description;
-    private Double price;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Category category;
+    @NotBlank(message = "Product name is required")
+    @Column(nullable = false)
+    private String name;
+
+    @NotBlank(message = "Description is required")
+    @Column(nullable = false)
+    private String description;
+
+    @Positive(message = "Price must be greater than zero")
+    @Column(nullable = false)
+    private Double price;
 }

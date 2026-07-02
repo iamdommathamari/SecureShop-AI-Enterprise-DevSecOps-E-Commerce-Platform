@@ -1,21 +1,23 @@
 package com.secureshop.backend.product;
 
+import com.secureshop.backend.dto.PagedResponse;
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import com.secureshop.backend.dto.PagedResponse;
 
-import org.springframework.data.domain.Pageable;
+import jakarta.validation.Valid;
+
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/products")
@@ -32,38 +34,75 @@ public class ProductController {
     }
 
     @Operation(
-        summary = "Get all products",
-        description = "Retrieve all available products."
-        )
-        @GetMapping
-        public ResponseEntity<PagedResponse<ProductResponseDTO>> getAllProducts(
-                @RequestParam(defaultValue = "0")
-                int page,
+            summary = "Get all products",
+            description = "Retrieve all available products."
+    )
+    @GetMapping
+    public ResponseEntity<PagedResponse<ProductResponseDTO>> getAllProducts(
 
-                @RequestParam(defaultValue = "10")
-                int size,
+            @RequestParam(defaultValue = "0")
+            int page,
 
-                @RequestParam(defaultValue = "id")
-                String sort,
+            @RequestParam(defaultValue = "10")
+            int size,
 
-                @RequestParam(defaultValue = "asc")
-                String direction) {
+            @RequestParam(defaultValue = "id")
+            String sort,
 
-                        Sort.Direction sortDirection =
-                        direction.equalsIgnoreCase("desc")
+            @RequestParam(defaultValue = "asc")
+            String direction) {
+
+        Sort.Direction sortDirection =
+                direction.equalsIgnoreCase("desc")
                         ? Sort.Direction.DESC
                         : Sort.Direction.ASC;
 
-                Pageable pageable =
-                        PageRequest.of(
+        Pageable pageable =
+                PageRequest.of(
                         page,
                         size,
                         Sort.by(sortDirection, sort));
 
-                return ResponseEntity.ok(
-                        service.getAllProducts(pageable)
-                );
-        }
+        return ResponseEntity.ok(
+                service.getAllProducts(pageable));
+    }
+
+    @Operation(
+            summary = "Search products",
+            description = "Search products by keyword."
+    )
+    @GetMapping("/search")
+    public ResponseEntity<PagedResponse<ProductResponseDTO>> searchProducts(
+
+            @RequestParam
+            String keyword,
+
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "10")
+            int size,
+
+            @RequestParam(defaultValue = "id")
+            String sort,
+
+            @RequestParam(defaultValue = "asc")
+            String direction) {
+
+        Sort.Direction sortDirection =
+                direction.equalsIgnoreCase("desc")
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        Sort.by(sortDirection, sort));
+
+        return ResponseEntity.ok(
+                service.searchProducts(keyword, pageable));
+    }
 
     @Operation(
             summary = "Get product by ID",
@@ -83,9 +122,9 @@ public class ProductController {
 
     @Operation(
             summary = "Create a new product",
-            description = "Create a new product in the system.",
+            description = "Create a new product.",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Product created successfully"),
+                    @ApiResponse(responseCode = "201", description = "Product created"),
                     @ApiResponse(responseCode = "400", description = "Validation failed")
             }
     )
@@ -99,17 +138,14 @@ public class ProductController {
     }
 
     @Operation(
-            summary = "Update an existing product",
-            description = "Update an existing product using its ID.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Product updated successfully"),
-                    @ApiResponse(responseCode = "400", description = "Validation failed"),
-                    @ApiResponse(responseCode = "404", description = "Product not found")
-            }
+            summary = "Update product",
+            description = "Update an existing product."
     )
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> updateProduct(
+
             @PathVariable Long id,
+
             @Valid @RequestBody ProductRequestDTO request) {
 
         return ResponseEntity.ok(
@@ -117,12 +153,8 @@ public class ProductController {
     }
 
     @Operation(
-            summary = "Delete a product",
-            description = "Delete a product using its ID.",
-            responses = {
-                    @ApiResponse(responseCode = "204", description = "Product deleted successfully"),
-                    @ApiResponse(responseCode = "404", description = "Product not found")
-            }
+            summary = "Delete product",
+            description = "Delete a product."
     )
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(

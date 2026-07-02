@@ -1,19 +1,17 @@
 package com.secureshop.backend.product;
 
-import com.secureshop.backend.category.Category;
-import com.secureshop.backend.category.CategoryRepository;
+import com.secureshop.backend.dto.PagedResponse;
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
-import com.secureshop.backend.exception.CategoryNotFoundException;
 import com.secureshop.backend.exception.ProductNotFoundException;
 import com.secureshop.backend.mapper.ProductMapper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import com.secureshop.backend.dto.PagedResponse;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -22,30 +20,43 @@ public class ProductServiceImpl implements ProductService {
             LoggerFactory.getLogger(ProductServiceImpl.class);
 
     private final ProductRepository repository;
-    private final CategoryRepository categoryRepository;
     private final ProductMapper mapper;
 
-    public ProductServiceImpl(ProductRepository repository,
-                              CategoryRepository categoryRepository,
-                              ProductMapper mapper) {
+    public ProductServiceImpl(
+            ProductRepository repository,
+            ProductMapper mapper) {
+
         this.repository = repository;
-        this.categoryRepository = categoryRepository;
         this.mapper = mapper;
     }
 
     @Override
-    public PagedResponse<ProductResponseDTO> getAllProducts(Pageable pageable) {
+    public PagedResponse<ProductResponseDTO> getAllProducts(
+            Pageable pageable) {
 
         log.info(
-            "Fetching products - page: {}, size: {}, sort: {}",
-            pageable.getPageNumber(),
-            pageable.getPageSize(),
-            pageable.getSort()
-        );
+                "Fetching products - page: {}, size: {}, sort: {}",
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort());
 
         Page<ProductResponseDTO> page = repository
-            .findAll(pageable)
-            .map(mapper::toResponse);
+                .findAll(pageable)
+                .map(mapper::toResponse);
+
+        return PagedResponse.from(page);
+    }
+
+    @Override
+    public PagedResponse<ProductResponseDTO> searchProducts(
+            String keyword,
+            Pageable pageable) {
+
+        log.info("Searching products with keyword: {}", keyword);
+
+        Page<ProductResponseDTO> page = repository
+                .findByNameContainingIgnoreCase(keyword, pageable)
+                .map(mapper::toResponse);
 
         return PagedResponse.from(page);
     }
@@ -67,17 +78,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO createProduct(ProductRequestDTO request) {
+    public ProductResponseDTO createProduct(
+            ProductRequestDTO request) {
 
         log.info("Creating product: {}", request.getName());
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new CategoryNotFoundException(request.getCategoryId()));
-
-        Product product = mapper.toEntity(request);
-        product.setCategory(category);
-
-        Product saved = repository.save(product);
+        Product saved = repository.save(
+                mapper.toEntity(request));
 
         log.info("Product created with id {}", saved.getId());
 
@@ -85,8 +92,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO updateProduct(Long id,
-                                            ProductRequestDTO request) {
+    public ProductResponseDTO updateProduct(
+            Long id,
+            ProductRequestDTO request) {
 
         log.info("Updating product {}", id);
 
@@ -98,13 +106,9 @@ public class ProductServiceImpl implements ProductService {
                     return new ProductNotFoundException(id);
                 });
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new CategoryNotFoundException(request.getCategoryId()));
-
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
-        product.setCategory(category);
 
         Product saved = repository.save(product);
 
