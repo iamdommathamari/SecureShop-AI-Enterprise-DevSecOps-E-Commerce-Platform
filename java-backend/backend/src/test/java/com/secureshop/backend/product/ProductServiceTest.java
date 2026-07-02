@@ -1,8 +1,11 @@
 package com.secureshop.backend.product;
 
+import com.secureshop.backend.category.Category;
+import com.secureshop.backend.category.CategoryRepository;
 import com.secureshop.backend.dto.PagedResponse;
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
+import com.secureshop.backend.exception.CategoryNotFoundException;
 import com.secureshop.backend.exception.ProductNotFoundException;
 import com.secureshop.backend.mapper.ProductMapper;
 import org.junit.jupiter.api.Test;
@@ -28,6 +31,9 @@ class ProductServiceTest {
     private ProductRepository repository;
 
     @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
     private ProductMapper mapper;
 
     @InjectMocks
@@ -40,28 +46,37 @@ class ProductServiceTest {
                 new ProductRequestDTO(
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L);
+
+        Category category = new Category(1L, "Electronics", "Electronics products");
 
         Product entity =
                 new Product(
                         null,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        category);
 
         Product savedEntity =
                 new Product(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        category);
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L);
+
+        when(categoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
 
         when(mapper.toEntity(request))
                 .thenReturn(entity);
@@ -93,13 +108,15 @@ class ProductServiceTest {
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0),
+                        85000.0,
+                        null),
 
                 new Product(
                         2L,
                         "Phone",
                         "Android Phone",
-                        25000.0)
+                        25000.0,
+                        null)
         );
 
         ProductResponseDTO laptop =
@@ -107,14 +124,16 @@ class ProductServiceTest {
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        null);
 
         ProductResponseDTO phone =
                 new ProductResponseDTO(
                         2L,
                         "Phone",
                         "Android Phone",
-                        25000.0);
+                        25000.0,
+                        null);
 
         Pageable pageable = PageRequest.of(0, 10);
         Page<Product> page = new PageImpl<>(entities, pageable, entities.size());
@@ -151,14 +170,16 @@ class ProductServiceTest {
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        null);
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        null);
 
         when(repository.findById(1L))
                 .thenReturn(Optional.of(entity));
@@ -198,31 +219,40 @@ class ProductServiceTest {
                 new ProductRequestDTO(
                         "Laptop Pro",
                         "Gaming Laptop RTX",
-                        99000.0);
+                        99000.0,
+                        1L);
+
+        Category category = new Category(1L, "Electronics", "Electronics products");
 
         Product entity =
                 new Product(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        category);
 
         Product saved =
                 new Product(
                         1L,
                         "Laptop Pro",
                         "Gaming Laptop RTX",
-                        99000.0);
+                        99000.0,
+                        category);
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop Pro",
                         "Gaming Laptop RTX",
-                        99000.0);
+                        99000.0,
+                        1L);
 
         when(repository.findById(1L))
                 .thenReturn(Optional.of(entity));
+
+        when(categoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
 
         when(repository.save(entity))
                 .thenReturn(saved);
@@ -249,7 +279,10 @@ class ProductServiceTest {
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        null,
+                        null,
+                        null);
 
         when(repository.findById(1L))
                 .thenReturn(Optional.of(entity));

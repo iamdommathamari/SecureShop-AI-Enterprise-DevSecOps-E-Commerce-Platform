@@ -53,13 +53,15 @@ class ProductControllerTest {
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0),
+                        85000.0,
+                        1L),
 
                 new ProductResponseDTO(
                         2L,
                         "Phone",
                         "Android Phone",
-                        25000.0)
+                        25000.0,
+                        1L)
         );
 
         when(service.getAllProducts(any(Pageable.class)))
@@ -83,7 +85,8 @@ class ProductControllerTest {
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L);
 
         when(service.getProductById(1L))
                 .thenReturn(response);
@@ -103,14 +106,16 @@ class ProductControllerTest {
                 new ProductRequestDTO(
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L);
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L);
 
         when(service.createProduct(any(ProductRequestDTO.class)))
                 .thenReturn(response);
@@ -133,14 +138,16 @@ class ProductControllerTest {
                 new ProductRequestDTO(
                         "Laptop Pro",
                         "Gaming Laptop RTX",
-                        99000.0);
+                        99000.0,
+                        1L);
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop Pro",
                         "Gaming Laptop RTX",
-                        99000.0);
+                        99000.0,
+                        1L);
 
         when(service.updateProduct(
                 eq(1L),
@@ -177,7 +184,8 @@ class ProductControllerTest {
                 new ProductRequestDTO(
                         "",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L);
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)

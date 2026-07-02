@@ -22,7 +22,8 @@ class ProductRepositoryTest {
                 null,
                 "Laptop",
                 "Gaming Laptop",
-                85000.0);
+                85000.0,
+                null);
 
         Product saved = repository.save(product);
 
