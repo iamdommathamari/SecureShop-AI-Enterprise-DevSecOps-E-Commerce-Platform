@@ -1,13 +1,13 @@
 package com.secureshop.backend.product;
 
+import com.secureshop.backend.dto.PagedResponse;
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface ProductService {
 
-    List<ProductResponseDTO> getAllProducts();
+    PagedResponse<ProductResponseDTO> getAllProducts(Pageable pageable);
 
     ProductResponseDTO getProductById(Long id);
 
