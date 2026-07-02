@@ -19,4 +19,6 @@ public class ProductRequestDTO {
 
     @Positive(message = "Price must be greater than zero")
     private Double price;
+
+    private Long categoryId;
 }

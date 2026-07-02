@@ -1,5 +1,6 @@
 package com.secureshop.backend.product;
 
+import com.secureshop.backend.dto.PagedResponse;
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
 import com.secureshop.backend.exception.ProductNotFoundException;
@@ -9,6 +10,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -111,8 +116,11 @@ class ProductServiceTest {
                         "Android Phone",
                         25000.0);
 
-        when(repository.findAll())
-                .thenReturn(entities);
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Product> page = new PageImpl<>(entities, pageable, entities.size());
+
+        when(repository.findAll(any(Pageable.class)))
+                .thenReturn(page);
 
         when(mapper.toResponse(entities.get(0)))
                 .thenReturn(laptop);
@@ -120,14 +128,19 @@ class ProductServiceTest {
         when(mapper.toResponse(entities.get(1)))
                 .thenReturn(phone);
 
-        List<ProductResponseDTO> result =
-                service.getAllProducts();
+        PagedResponse<ProductResponseDTO> result =
+                service.getAllProducts(pageable);
 
-        assertEquals(2, result.size());
-        assertEquals("Laptop", result.get(0).getName());
-        assertEquals("Phone", result.get(1).getName());
+        assertEquals(2, result.getContent().size());
+        assertEquals("Laptop", result.getContent().get(0).getName());
+        assertEquals("Phone", result.getContent().get(1).getName());
+        assertEquals(0, result.getPage());
+        assertEquals(10, result.getSize());
+        assertEquals(2L, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        assertTrue(result.isLast());
 
-        verify(repository).findAll();
+        verify(repository).findAll(any(Pageable.class));
     }
 
     @Test

@@ -14,16 +14,22 @@ public class ProductMapper {
             null,
             dto.getName(),
             dto.getDescription(),
-            dto.getPrice()
+            dto.getPrice(),
+            null
         );
     }
 
     public ProductResponseDTO toResponse(Product product) {
 
+        Long categoryId = product.getCategory() != null
+                ? product.getCategory().getId()
+                : null;
+
         return new ProductResponseDTO(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
-                product.getPrice());
+                product.getPrice(),
+                categoryId);
     }
 }

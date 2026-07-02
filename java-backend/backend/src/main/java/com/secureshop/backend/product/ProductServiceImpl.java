@@ -1,7 +1,10 @@
 package com.secureshop.backend.product;
 
+import com.secureshop.backend.category.Category;
+import com.secureshop.backend.category.CategoryRepository;
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
+import com.secureshop.backend.exception.CategoryNotFoundException;
 import com.secureshop.backend.exception.ProductNotFoundException;
 import com.secureshop.backend.mapper.ProductMapper;
 import org.slf4j.Logger;
@@ -19,11 +22,14 @@ public class ProductServiceImpl implements ProductService {
             LoggerFactory.getLogger(ProductServiceImpl.class);
 
     private final ProductRepository repository;
+    private final CategoryRepository categoryRepository;
     private final ProductMapper mapper;
 
     public ProductServiceImpl(ProductRepository repository,
+                              CategoryRepository categoryRepository,
                               ProductMapper mapper) {
         this.repository = repository;
+        this.categoryRepository = categoryRepository;
         this.mapper = mapper;
     }
 
@@ -65,7 +71,11 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("Creating product: {}", request.getName());
 
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(request.getCategoryId()));
+
         Product product = mapper.toEntity(request);
+        product.setCategory(category);
 
         Product saved = repository.save(product);
 
@@ -88,9 +98,13 @@ public class ProductServiceImpl implements ProductService {
                     return new ProductNotFoundException(id);
                 });
 
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(request.getCategoryId()));
+
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
+        product.setCategory(category);
 
         Product saved = repository.save(product);
 

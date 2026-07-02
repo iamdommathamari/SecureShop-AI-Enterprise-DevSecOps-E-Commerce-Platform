@@ -1,6 +1,7 @@
 package com.secureshop.backend.product;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.secureshop.backend.dto.PagedResponse;
 import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
 import com.secureshop.backend.exception.GlobalExceptionHandler;
@@ -13,9 +14,12 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -45,7 +49,6 @@ class ProductControllerTest {
     void getAllProducts_shouldReturnAllProducts() throws Exception {
 
         List<ProductResponseDTO> response = List.of(
-
                 new ProductResponseDTO(
                         1L,
                         "Laptop",
@@ -59,20 +62,16 @@ class ProductControllerTest {
                         25000.0)
         );
 
-        when(service.getAllProducts())
-                .thenReturn(response);
+        when(service.getAllProducts(any(Pageable.class)))
+                .thenReturn(new PagedResponse<>(response, 0, 10, 2, 1, true));
 
         mockMvc.perform(get("/api/products"))
-
                 .andExpect(status().isOk())
-
-                .andExpect(jsonPath("$.length()").value(2))
-
-                .andExpect(jsonPath("$[0].name")
-                        .value("Laptop"))
-
-                .andExpect(jsonPath("$[1].name")
-                        .value("Phone"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].name").value("Laptop"))
+                .andExpect(jsonPath("$.content[1].name").value("Phone"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10));
     }
 
     @Test
@@ -90,13 +89,10 @@ class ProductControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(get("/api/products/1"))
-
                 .andExpect(status().isOk())
-
                 .andExpect(jsonPath("$.id").value(1))
-
-                .andExpect(jsonPath("$.name")
-                        .value("Laptop"));
+                .andExpect(jsonPath("$.name").value("Laptop"))
+                .andExpect(jsonPath("$.price").value(85000.0));
     }
 
     @Test
@@ -116,19 +112,17 @@ class ProductControllerTest {
                         "Gaming Laptop",
                         85000.0);
 
-        when(service.createProduct(request))
+        when(service.createProduct(any(ProductRequestDTO.class)))
                 .thenReturn(response);
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-
                 .andExpect(status().isCreated())
-
                 .andExpect(jsonPath("$.id").value(1))
-
-                .andExpect(jsonPath("$.name")
-                        .value("Laptop"));
+                .andExpect(jsonPath("$.name").value("Laptop"))
+                .andExpect(jsonPath("$.description").value("Gaming Laptop"))
+                .andExpect(jsonPath("$.price").value(85000.0));
     }
 
     @Test
@@ -148,20 +142,19 @@ class ProductControllerTest {
                         "Gaming Laptop RTX",
                         99000.0);
 
-        when(service.updateProduct(1L, request))
+        when(service.updateProduct(
+                eq(1L),
+                any(ProductRequestDTO.class)))
                 .thenReturn(response);
 
         mockMvc.perform(put("/api/products/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-
                 .andExpect(status().isOk())
-
-                .andExpect(jsonPath("$.name")
-                        .value("Laptop Pro"))
-
-                .andExpect(jsonPath("$.price")
-                        .value(99000.0));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Laptop Pro"))
+                .andExpect(jsonPath("$.description").value("Gaming Laptop RTX"))
+                .andExpect(jsonPath("$.price").value(99000.0));
     }
 
     @Test
@@ -173,7 +166,6 @@ class ProductControllerTest {
                 .deleteProduct(1L);
 
         mockMvc.perform(delete("/api/products/1"))
-
                 .andExpect(status().isNoContent());
     }
 
@@ -184,17 +176,14 @@ class ProductControllerTest {
         ProductRequestDTO request =
                 new ProductRequestDTO(
                         "",
-                        "",
-                        -100.0);
+                        "Gaming Laptop",
+                        85000.0);
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-
                 .andExpect(status().isBadRequest())
-
                 .andExpect(jsonPath("$.status").value(400))
-
                 .andExpect(jsonPath("$.message")
                         .value("Product name is required"));
     }
@@ -207,12 +196,9 @@ class ProductControllerTest {
                 .thenThrow(new ProductNotFoundException(100L));
 
         mockMvc.perform(get("/api/products/100"))
-
                 .andExpect(status().isNotFound())
-
                 .andExpect(jsonPath("$.status").value(404))
-
                 .andExpect(jsonPath("$.message")
-                    .value("Product not found with id 100"));
+                        .value("Product not found with id 100"));
     }
 }
