@@ -7,7 +7,9 @@ import com.secureshop.backend.mapper.ProductMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
+import com.secureshop.backend.dto.PagedResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Service
@@ -26,14 +28,20 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponseDTO> getAllProducts() {
+    public PagedResponse<ProductResponseDTO> getAllProducts(Pageable pageable) {
 
-        log.info("Fetching all products");
+        log.info(
+            "Fetching products - page: {}, size: {}, sort: {}",
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            pageable.getSort()
+        );
 
-        return repository.findAll()
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+        Page<ProductResponseDTO> page = repository
+            .findAll(pageable)
+            .map(mapper::toResponse);
+
+        return PagedResponse.from(page);
     }
 
     @Override
