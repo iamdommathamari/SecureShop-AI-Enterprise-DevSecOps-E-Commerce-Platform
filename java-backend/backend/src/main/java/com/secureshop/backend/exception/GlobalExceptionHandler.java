@@ -1,5 +1,6 @@
 package com.secureshop.backend.exception;
 
+import com.secureshop.backend.exception.CategoryNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -33,6 +34,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse>
         handleProductNotFound(
             ProductNotFoundException ex) {
+
+        ErrorResponse response =
+            new ErrorResponse(
+                    HttpStatus.NOT_FOUND.value(),
+                    ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(response);
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ErrorResponse>
+        handleCategoryNotFound(
+            CategoryNotFoundException ex) {
 
         ErrorResponse response =
             new ErrorResponse(

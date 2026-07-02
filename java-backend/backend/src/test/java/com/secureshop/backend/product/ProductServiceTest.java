@@ -280,8 +280,6 @@ class ProductServiceTest {
                         "Laptop",
                         "Gaming Laptop",
                         85000.0,
-                        null,
-                        null,
                         null);
 
         when(repository.findById(1L))

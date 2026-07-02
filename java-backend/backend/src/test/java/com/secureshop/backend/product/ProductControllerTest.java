@@ -95,7 +95,8 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Laptop"))
-                .andExpect(jsonPath("$.price").value(85000.0));
+                .andExpect(jsonPath("$.price").value(85000.0))
+                .andExpect(jsonPath("$.categoryId").value(1));
     }
 
     @Test
@@ -161,7 +162,8 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Laptop Pro"))
                 .andExpect(jsonPath("$.description").value("Gaming Laptop RTX"))
-                .andExpect(jsonPath("$.price").value(99000.0));
+                .andExpect(jsonPath("$.price").value(99000.0))
+                .andExpect(jsonPath("$.categoryId").value(1));
     }
 
     @Test
