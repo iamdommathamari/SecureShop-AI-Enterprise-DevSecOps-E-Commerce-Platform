@@ -9,6 +9,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.secureshop.backend.dto.PagedResponse;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -27,17 +32,38 @@ public class ProductController {
     }
 
     @Operation(
-            summary = "Get all products",
-            description = "Retrieve all available products.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Products retrieved successfully")
-            }
-    )
-    @GetMapping
-    public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
+        summary = "Get all products",
+        description = "Retrieve all available products."
+        )
+        @GetMapping
+        public ResponseEntity<PagedResponse<ProductResponseDTO>> getAllProducts(
+                @RequestParam(defaultValue = "0")
+                int page,
 
-        return ResponseEntity.ok(service.getAllProducts());
-    }
+                @RequestParam(defaultValue = "10")
+                int size,
+
+                @RequestParam(defaultValue = "id")
+                String sort,
+
+                @RequestParam(defaultValue = "asc")
+                String direction) {
+
+                        Sort.Direction sortDirection =
+                        direction.equalsIgnoreCase("desc")
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+
+                Pageable pageable =
+                        PageRequest.of(
+                        page,
+                        size,
+                        Sort.by(sortDirection, sort));
+
+                return ResponseEntity.ok(
+                        service.getAllProducts(pageable)
+                );
+        }
 
     @Operation(
             summary = "Get product by ID",
