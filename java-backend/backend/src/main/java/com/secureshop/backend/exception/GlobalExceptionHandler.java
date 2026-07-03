@@ -44,6 +44,17 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.NOT_FOUND)
             .body(response);
     }
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCategoryNotFound(
+        CategoryNotFoundException ex) {
 
+        ErrorResponse error = new ErrorResponse(
+            404,
+            ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(error);
+    }
     
 }
