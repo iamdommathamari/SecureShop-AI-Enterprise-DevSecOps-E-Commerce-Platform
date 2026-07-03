@@ -1,32 +1,44 @@
 package com.secureshop.backend.product;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.secureshop.backend.category.Category;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-@Entity
-@Table(name = "products")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "products")
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Product name is required")
     @Column(nullable = false)
     private String name;
 
-    @NotBlank(message = "Description is required")
     @Column(nullable = false)
     private String description;
 
-    @Positive(message = "Price must be greater than zero")
     @Column(nullable = false)
     private Double price;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "category_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_product_category")
+    )
+    @JsonBackReference
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Category category;
 }
