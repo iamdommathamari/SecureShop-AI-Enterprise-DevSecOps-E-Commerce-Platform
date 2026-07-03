@@ -7,23 +7,23 @@ import org.springframework.data.domain.Pageable;
 
 public interface ProductService {
 
-    PagedResponse<ProductResponseDTO> getAllProducts(
-            Pageable pageable);
+    PagedResponse<ProductResponseDTO> getAllProducts(Pageable pageable);
 
     PagedResponse<ProductResponseDTO> searchProducts(
             String keyword,
             Pageable pageable);
 
-    ProductResponseDTO getProductById(
-            Long id);
+    PagedResponse<ProductResponseDTO> getProductsByCategory(
+            Long categoryId,
+            Pageable pageable);
 
-    ProductResponseDTO createProduct(
-            ProductRequestDTO request);
+    ProductResponseDTO getProductById(Long id);
+
+    ProductResponseDTO createProduct(ProductRequestDTO request);
 
     ProductResponseDTO updateProduct(
             Long id,
             ProductRequestDTO request);
 
-    void deleteProduct(
-            Long id);
+    void deleteProduct(Long id);
 }

@@ -5,6 +5,9 @@ import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
 import com.secureshop.backend.exception.ProductNotFoundException;
 import com.secureshop.backend.mapper.ProductMapper;
+import com.secureshop.backend.category.Category;
+import com.secureshop.backend.category.CategoryRepository;
+import com.secureshop.backend.exception.CategoryNotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,16 +23,19 @@ public class ProductServiceImpl implements ProductService {
             LoggerFactory.getLogger(ProductServiceImpl.class);
 
     private final ProductRepository repository;
+    private final CategoryRepository categoryRepository;
     private final ProductMapper mapper;
+    
 
     public ProductServiceImpl(
-            ProductRepository repository,
-            ProductMapper mapper) {
+        ProductRepository repository,
+        CategoryRepository categoryRepository,
+        ProductMapper mapper) {
 
-        this.repository = repository;
-        this.mapper = mapper;
+            this.repository = repository;
+            this.categoryRepository = categoryRepository;
+            this.mapper = mapper;
     }
-
     @Override
     public PagedResponse<ProductResponseDTO> getAllProducts(
             Pageable pageable) {
@@ -78,44 +84,78 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO createProduct(
-            ProductRequestDTO request) {
+public ProductResponseDTO createProduct(
+        ProductRequestDTO request) {
 
-        log.info("Creating product: {}", request.getName());
+    log.info("Creating product: {}", request.getName());
 
-        Product saved = repository.save(
-                mapper.toEntity(request));
+    Category category = categoryRepository
+            .findById(request.getCategoryId())
+            .orElseThrow(() -> {
 
-        log.info("Product created with id {}", saved.getId());
+                log.warn(
+                        "Category not found with id {}",
+                        request.getCategoryId());
 
-        return mapper.toResponse(saved);
-    }
+                return new CategoryNotFoundException(
+                        request.getCategoryId());
+            });
+
+    Product product = mapper.toEntity(request);
+
+    product.setCategory(category);
+
+    Product saved = repository.save(product);
+
+    log.info(
+            "Product created successfully with id {}",
+            saved.getId());
+
+    return mapper.toResponse(saved);
+}
 
     @Override
-    public ProductResponseDTO updateProduct(
-            Long id,
-            ProductRequestDTO request) {
+public ProductResponseDTO updateProduct(
+        Long id,
+        ProductRequestDTO request) {
 
-        log.info("Updating product {}", id);
+    log.info("Updating product {}", id);
 
-        Product product = repository.findById(id)
-                .orElseThrow(() -> {
+    Product product = repository.findById(id)
+            .orElseThrow(() -> {
 
-                    log.warn("Product not found {}", id);
+                log.warn(
+                        "Product not found with id {}",
+                        id);
 
-                    return new ProductNotFoundException(id);
-                });
+                return new ProductNotFoundException(id);
+            });
 
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
+    Category category = categoryRepository
+            .findById(request.getCategoryId())
+            .orElseThrow(() -> {
 
-        Product saved = repository.save(product);
+                log.warn(
+                        "Category not found with id {}",
+                        request.getCategoryId());
 
-        log.info("Product {} updated successfully", id);
+                return new CategoryNotFoundException(
+                        request.getCategoryId());
+            });
 
-        return mapper.toResponse(saved);
-    }
+    product.setName(request.getName());
+    product.setDescription(request.getDescription());
+    product.setPrice(request.getPrice());
+    product.setCategory(category);
+
+    Product saved = repository.save(product);
+
+    log.info(
+            "Product {} updated successfully",
+            id);
+
+    return mapper.toResponse(saved);
+}
 
     @Override
     public void deleteProduct(Long id) {
@@ -134,4 +174,19 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("Product {} deleted successfully", id);
     }
+    @Override
+public PagedResponse<ProductResponseDTO> getProductsByCategory(
+        Long categoryId,
+        Pageable pageable) {
+
+    log.info(
+            "Fetching products for category {}",
+            categoryId);
+
+    Page<ProductResponseDTO> page = repository
+            .findByCategoryId(categoryId, pageable)
+            .map(mapper::toResponse);
+
+    return PagedResponse.from(page);
+}
 }

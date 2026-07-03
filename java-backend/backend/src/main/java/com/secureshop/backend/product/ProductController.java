@@ -66,6 +66,43 @@ public class ProductController {
         return ResponseEntity.ok(
                 service.getAllProducts(pageable));
     }
+    @Operation(
+        summary = "Get products by category",
+        description = "Retrieve products belonging to a category."
+)
+@GetMapping("/category/{categoryId}")
+public ResponseEntity<PagedResponse<ProductResponseDTO>>
+getProductsByCategory(
+
+        @PathVariable Long categoryId,
+
+        @RequestParam(defaultValue = "0")
+        int page,
+
+        @RequestParam(defaultValue = "10")
+        int size,
+
+        @RequestParam(defaultValue = "id")
+        String sort,
+
+        @RequestParam(defaultValue = "asc")
+        String direction) {
+
+    Sort.Direction sortDirection =
+            direction.equalsIgnoreCase("desc")
+                    ? Sort.Direction.DESC
+                    : Sort.Direction.ASC;
+
+    Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(sortDirection, sort));
+
+    return ResponseEntity.ok(
+            service.getProductsByCategory(
+                    categoryId,
+                    pageable));
+}
 
     @Operation(
             summary = "Search products",
