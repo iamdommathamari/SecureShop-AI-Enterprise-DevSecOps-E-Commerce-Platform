@@ -45,18 +45,5 @@ public class GlobalExceptionHandler {
             .body(response);
     }
 
-    @ExceptionHandler(CategoryNotFoundException.class)
-    public ResponseEntity<ErrorResponse>
-        handleCategoryNotFound(
-            CategoryNotFoundException ex) {
-
-        ErrorResponse response =
-            new ErrorResponse(
-                    HttpStatus.NOT_FOUND.value(),
-                    ex.getMessage());
-
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body(response);
-    }
+    
 }
