@@ -16,4 +16,8 @@ public class ProductResponseDTO {
     private String description;
 
     private Double price;
+
+    private Long categoryId;
+
+    private String categoryName;
 }
