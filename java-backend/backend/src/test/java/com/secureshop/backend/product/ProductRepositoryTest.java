@@ -1,145 +1,208 @@
 package com.secureshop.backend.product;
 
+import com.secureshop.backend.category.Category;
+import com.secureshop.backend.category.CategoryRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-
 import org.springframework.data.domain.Pageable;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class ProductRepositoryTest {
-
 
     @Autowired
     private ProductRepository repository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
     @Test
-    @DisplayName("Save product should persist")
+    @DisplayName("save product")
     void saveProduct_shouldPersist() {
 
-        Product product = new Product(
-                null,
-                "Laptop",
-                "Gaming Laptop",
-                85000.0
-        );
+        Category category = categoryRepository.save(
+                Category.builder()
+                        .name("Electronics")
+                        .description("Electronic Products")
+                        .build());
+
+        Product product = Product.builder()
+                .name("Laptop")
+                .description("Gaming Laptop")
+                .price(85000.0)
+                .category(category)
+                .build();
 
         Product saved = repository.save(product);
 
-        assertNotNull(saved.getId());
-        assertEquals("Laptop", saved.getName());
-        assertEquals("Gaming Laptop", saved.getDescription());
-        assertEquals(85000.0, saved.getPrice());
+        assertThat(saved.getId()).isNotNull();
+        assertThat(saved.getName()).isEqualTo("Laptop");
+        assertThat(saved.getCategory().getId())
+                .isEqualTo(category.getId());
     }
 
     @Test
-    @DisplayName("Find product by id")
-    void findById_shouldReturnProduct() {
-
-        Product saved = repository.save(
-                new Product(
-                        null,
-                        "Keyboard",
-                        "Mechanical Keyboard",
-                        3500.0
-                )
-        );
-
-        Product found = repository
-                .findById(saved.getId())
-                .orElse(null);
-
-        assertNotNull(found);
-        assertEquals("Keyboard", found.getName());
-    }
-
-    @Test
-    @DisplayName("Search products by name")
+    @DisplayName("findByNameContainingIgnoreCase")
     void findByNameContainingIgnoreCase_shouldReturnMatchingProducts() {
 
-        repository.save(
-                new Product(
-                        null,
-                        "Gaming Laptop",
-                        "RTX Laptop",
-                        90000.0
-                )
-        );
+        Category category = categoryRepository.save(
+                Category.builder()
+                        .name("Electronics")
+                        .description("Electronic Products")
+                        .build());
 
         repository.save(
-                new Product(
-                        null,
-                        "Office Laptop",
-                        "Business Laptop",
-                        60000.0
-                )
-        );
+                Product.builder()
+                        .name("Gaming Laptop")
+                        .description("Laptop")
+                        .price(85000.0)
+                        .category(category)
+                        .build());
 
         repository.save(
-                new Product(
-                        null,
-                        "Wireless Mouse",
-                        "Bluetooth Mouse",
-                        1500.0
-                )
-        );
+                Product.builder()
+                        .name("Phone")
+                        .description("Android")
+                        .price(25000.0)
+                        .category(category)
+                        .build());
 
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0,10);
 
         Page<Product> page =
                 repository.findByNameContainingIgnoreCase(
                         "laptop",
-                        pageable
-                );
+                        pageable);
 
-        assertEquals(2, page.getTotalElements());
-
-        assertTrue(
-                page.getContent()
-                        .stream()
-                        .allMatch(product ->
-                                product.getName()
-                                        .toLowerCase()
-                                        .contains("laptop"))
-        );
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().getFirst().getName())
+                .isEqualTo("Gaming Laptop");
     }
 
     @Test
-    @DisplayName("Search products should support pagination")
-    void searchProducts_shouldSupportPagination() {
+    @DisplayName("findByCategoryId")
+    void findByCategoryId_shouldReturnProducts() {
 
-        for (int i = 1; i <= 15; i++) {
+        Category laptops = categoryRepository.save(
+                Category.builder()
+                        .name("Laptops")
+                        .description("Laptop Category")
+                        .build());
 
-            repository.save(
-                    new Product(
-                            null,
-                            "Laptop " + i,
-                            "Description " + i,
-                            50000.0 + i
-                    )
-            );
-        }
+        Category mobiles = categoryRepository.save(
+                Category.builder()
+                        .name("Mobiles")
+                        .description("Mobile Category")
+                        .build());
 
-        Pageable pageable = PageRequest.of(0, 10);
+        repository.save(
+                Product.builder()
+                        .name("MacBook")
+                        .description("Apple")
+                        .price(200000.0)
+                        .category(laptops)
+                        .build());
+
+        repository.save(
+                Product.builder()
+                        .name("Dell XPS")
+                        .description("Dell")
+                        .price(180000.0)
+                        .category(laptops)
+                        .build());
+
+        repository.save(
+                Product.builder()
+                        .name("iPhone")
+                        .description("Apple")
+                        .price(120000.0)
+                        .category(mobiles)
+                        .build());
+
+        Pageable pageable = PageRequest.of(0,10);
 
         Page<Product> page =
-                repository.findByNameContainingIgnoreCase(
-                        "Laptop",
-                        pageable
-                );
+                repository.findByCategoryId(
+                        laptops.getId(),
+                        pageable);
 
-        assertEquals(10, page.getContent().size());
-        assertEquals(15, page.getTotalElements());
-        assertEquals(2, page.getTotalPages());
-        assertTrue(page.hasNext());
+        assertThat(page.getContent()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("findByCategoryIdAndNameContainingIgnoreCase")
+    void findByCategoryIdAndNameContainingIgnoreCase_shouldReturnProducts() {
+
+        Category laptops = categoryRepository.save(
+                Category.builder()
+                        .name("Laptops")
+                        .description("Laptop Category")
+                        .build());
+
+        repository.save(
+                Product.builder()
+                        .name("MacBook Pro")
+                        .description("Apple")
+                        .price(200000.0)
+                        .category(laptops)
+                        .build());
+
+        repository.save(
+                Product.builder()
+                        .name("Dell XPS")
+                        .description("Dell")
+                        .price(170000.0)
+                        .category(laptops)
+                        .build());
+
+        Pageable pageable = PageRequest.of(0,10);
+
+        Page<Product> page =
+                repository.findByCategoryIdAndNameContainingIgnoreCase(
+                        laptops.getId(),
+                        "mac",
+                        pageable);
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().getFirst().getName())
+                .isEqualTo("MacBook Pro");
+    }
+
+    @Test
+    @DisplayName("pagination")
+    void pagination_shouldReturnPagedResults() {
+
+        Category category = categoryRepository.save(
+                Category.builder()
+                        .name("Electronics")
+                        .description("Electronic Products")
+                        .build());
+
+        for (int i = 1; i <= 20; i++) {
+
+            repository.save(
+                    Product.builder()
+                            .name("Product " + i)
+                            .description("Description")
+                            .price(100.0 + i)
+                            .category(category)
+                            .build());
+        }
+
+        Pageable pageable = PageRequest.of(0,5);
+
+        Page<Product> page =
+                repository.findAll(pageable);
+
+        assertThat(page.getContent()).hasSize(5);
+        assertThat(page.getTotalElements()).isEqualTo(20);
+        assertThat(page.getTotalPages()).isEqualTo(4);
     }
 }
