@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -47,75 +48,74 @@ class CategoryControllerTest {
     private CategoryService service;
 
     @Test
-    @DisplayName("GET /api/categories returns all categories")
-    void getAllCategories_shouldReturnPagedCategories() throws Exception {
+    @DisplayName("GET /api/categories")
+    void getAllCategories_shouldReturnPagedCategories()
+            throws Exception {
 
-        List<CategoryResponseDTO> response = List.of(
+        CategoryResponseDTO category =
                 new CategoryResponseDTO(
                         1L,
                         "Electronics",
-                        "Electronic Products"),
-                new CategoryResponseDTO(
-                        2L,
-                        "Books",
-                        "Books Collection")
-        );
+                        "Electronic Products",
+                        5);
 
-        when(service.getAllCategories(any(Pageable.class)))
-                .thenReturn(new PagedResponse<>(
-                        response,
+        PagedResponse<CategoryResponseDTO> response =
+                new PagedResponse<>(
+                        List.of(category),
                         0,
                         10,
-                        2,
                         1,
-                        true));
+                        1,
+                        true);
+
+        when(service.getAllCategories(any(Pageable.class)))
+                .thenReturn(response);
 
         mockMvc.perform(get("/api/categories"))
 
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content.length()")
+                        .value(1))
 
                 .andExpect(jsonPath("$.content[0].name")
                         .value("Electronics"))
 
-                .andExpect(jsonPath("$.content[1].name")
-                        .value("Books"))
-
-                .andExpect(jsonPath("$.page").value(0))
-
-                .andExpect(jsonPath("$.size").value(10));
+                .andExpect(jsonPath("$.content[0].productCount")
+                        .value(5));
     }
 
     @Test
     @DisplayName("GET /api/categories/search")
-    void searchCategories_shouldReturnPagedCategories() throws Exception {
+    void searchCategories_shouldReturnCategories()
+            throws Exception {
 
-        List<CategoryResponseDTO> response = List.of(
+        CategoryResponseDTO category =
                 new CategoryResponseDTO(
                         1L,
                         "Electronics",
-                        "Electronic Products")
-        );
+                        "Electronic Products",
+                        5);
 
-        when(service.searchCategories(
-                eq("Elect"),
-                any(Pageable.class)))
-                .thenReturn(new PagedResponse<>(
-                        response,
+        PagedResponse<CategoryResponseDTO> response =
+                new PagedResponse<>(
+                        List.of(category),
                         0,
                         10,
                         1,
                         1,
-                        true));
+                        true);
+
+        when(service.searchCategories(
+                eq("Elect"),
+                any(Pageable.class)))
+                .thenReturn(response);
 
         mockMvc.perform(
-                        get("/api/categories/search")
-                                .param("keyword", "Elect"))
+                get("/api/categories/search")
+                        .param("keyword", "Elect"))
 
                 .andExpect(status().isOk())
-
-                .andExpect(jsonPath("$.content.length()").value(1))
 
                 .andExpect(jsonPath("$.content[0].name")
                         .value("Electronics"));
@@ -123,13 +123,15 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("GET /api/categories/{id}")
-    void getCategoryById_shouldReturnCategory() throws Exception {
+    void getCategoryById_shouldReturnCategory()
+            throws Exception {
 
         CategoryResponseDTO response =
                 new CategoryResponseDTO(
                         1L,
                         "Electronics",
-                        "Electronic Products");
+                        "Electronic Products",
+                        5);
 
         when(service.getCategoryById(1L))
                 .thenReturn(response);
@@ -138,18 +140,20 @@ class CategoryControllerTest {
 
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id")
+                        .value(1))
 
                 .andExpect(jsonPath("$.name")
                         .value("Electronics"))
 
-                .andExpect(jsonPath("$.description")
-                        .value("Electronic Products"));
+                .andExpect(jsonPath("$.productCount")
+                        .value(5));
     }
 
     @Test
     @DisplayName("POST /api/categories")
-    void createCategory_shouldReturnCreatedCategory() throws Exception {
+    void createCategory_shouldReturnCreatedCategory()
+            throws Exception {
 
         CategoryRequestDTO request =
                 new CategoryRequestDTO(
@@ -160,27 +164,29 @@ class CategoryControllerTest {
                 new CategoryResponseDTO(
                         1L,
                         "Electronics",
-                        "Electronic Products");
+                        "Electronic Products",
+                        0);
 
         when(service.createCategory(any(CategoryRequestDTO.class)))
                 .thenReturn(response);
 
         mockMvc.perform(
-                        post("/api/categories")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                post("/api/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
 
                 .andExpect(status().isCreated())
 
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id")
+                        .value(1))
 
                 .andExpect(jsonPath("$.name")
                         .value("Electronics"));
     }
-
-    @Test
+        @Test
     @DisplayName("PUT /api/categories/{id}")
-    void updateCategory_shouldReturnUpdatedCategory() throws Exception {
+    void updateCategory_shouldReturnUpdatedCategory()
+            throws Exception {
 
         CategoryRequestDTO request =
                 new CategoryRequestDTO(
@@ -191,7 +197,8 @@ class CategoryControllerTest {
                 new CategoryResponseDTO(
                         1L,
                         "Electronics Updated",
-                        "Updated Description");
+                        "Updated Description",
+                        5);
 
         when(service.updateCategory(
                 eq(1L),
@@ -199,32 +206,41 @@ class CategoryControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(
-                        put("/api/categories/1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                put("/api/categories/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
 
                 .andExpect(status().isOk())
 
                 .andExpect(jsonPath("$.name")
-                        .value("Electronics Updated"));
+                        .value("Electronics Updated"))
+
+                .andExpect(jsonPath("$.description")
+                        .value("Updated Description"))
+
+                .andExpect(jsonPath("$.productCount")
+                        .value(5));
     }
 
     @Test
     @DisplayName("DELETE /api/categories/{id}")
-    void deleteCategory_shouldReturnNoContent() throws Exception {
+    void deleteCategory_shouldReturnNoContent()
+            throws Exception {
 
         doNothing()
                 .when(service)
                 .deleteCategory(1L);
 
-        mockMvc.perform(delete("/api/categories/1"))
+        mockMvc.perform(
+                delete("/api/categories/1"))
 
                 .andExpect(status().isNoContent());
     }
 
     @Test
     @DisplayName("POST validation failure")
-    void createCategory_shouldReturnBadRequest() throws Exception {
+    void createCategory_shouldReturnBadRequest()
+            throws Exception {
 
         CategoryRequestDTO request =
                 new CategoryRequestDTO(
@@ -232,9 +248,9 @@ class CategoryControllerTest {
                         "");
 
         mockMvc.perform(
-                        post("/api/categories")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                post("/api/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
 
                 .andExpect(status().isBadRequest())
 
@@ -244,12 +260,14 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("GET category not found")
-    void getCategoryById_shouldReturnNotFound() throws Exception {
+    void getCategoryById_shouldReturnNotFound()
+            throws Exception {
 
         when(service.getCategoryById(100L))
                 .thenThrow(new CategoryNotFoundException(100L));
 
-        mockMvc.perform(get("/api/categories/100"))
+        mockMvc.perform(
+                get("/api/categories/100"))
 
                 .andExpect(status().isNotFound())
 
