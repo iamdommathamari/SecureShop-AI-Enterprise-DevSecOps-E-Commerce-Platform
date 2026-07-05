@@ -5,29 +5,28 @@ import com.secureshop.backend.dto.CategoryResponseDTO;
 import com.secureshop.backend.dto.PagedResponse;
 import com.secureshop.backend.exception.CategoryNotFoundException;
 import com.secureshop.backend.mapper.CategoryMapper;
+import com.secureshop.backend.product.Product;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {
 
     @Mock
@@ -40,18 +39,29 @@ class CategoryServiceTest {
     private CategoryServiceImpl service;
 
     private Category category;
-
     private CategoryRequestDTO request;
-
     private CategoryResponseDTO response;
 
     @BeforeEach
     void setUp() {
 
-        category = new Category(
-                1L,
-                "Electronics",
-                "Electronic Products");
+        MockitoAnnotations.openMocks(this);
+
+        Product product = Product.builder()
+                .id(1L)
+                .name("Laptop")
+                .description("Gaming Laptop")
+                .price(85000.0)
+                .build();
+
+        category = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic Products")
+                .products(new ArrayList<>(List.of(product)))
+                .build();
+
+        product.setCategory(category);
 
         request = new CategoryRequestDTO(
                 "Electronics",
@@ -60,47 +70,52 @@ class CategoryServiceTest {
         response = new CategoryResponseDTO(
                 1L,
                 "Electronics",
-                "Electronic Products");
+                "Electronic Products",
+                1);
     }
 
     @Test
-    @DisplayName("Should return all categories")
-    void getAllCategories_shouldReturnPagedResponse() {
+    @DisplayName("getAllCategories")
+    void getAllCategories_shouldReturnPagedCategories() {
 
-        Page<Category> page = new PageImpl<>(
-                List.of(category));
+        Pageable pageable = PageRequest.of(0, 10);
 
-        when(repository.findAll(any(PageRequest.class)))
+        Page<Category> page =
+                new PageImpl<>(List.of(category));
+
+        when(repository.findAll(pageable))
                 .thenReturn(page);
 
         when(mapper.toResponse(category))
                 .thenReturn(response);
 
         PagedResponse<CategoryResponseDTO> result =
-                service.getAllCategories(
-                        PageRequest.of(0,10));
+                service.getAllCategories(pageable);
 
-        assertEquals(1,
+        assertEquals(
+                1,
                 result.getContent().size());
 
         assertEquals(
                 "Electronics",
-                result.getContent().get(0).getName());
+                result.getContent().getFirst().getName());
 
         verify(repository)
-                .findAll(any(PageRequest.class));
+                .findAll(pageable);
     }
 
     @Test
-    @DisplayName("Should search categories")
-    void searchCategories_shouldReturnPagedResponse() {
+    @DisplayName("searchCategories")
+    void searchCategories_shouldReturnCategories() {
+
+        Pageable pageable = PageRequest.of(0, 10);
 
         Page<Category> page =
                 new PageImpl<>(List.of(category));
 
         when(repository.findByNameContainingIgnoreCase(
-                eq("Elect"),
-                any(PageRequest.class)))
+                "Elect",
+                pageable))
                 .thenReturn(page);
 
         when(mapper.toResponse(category))
@@ -109,19 +124,20 @@ class CategoryServiceTest {
         PagedResponse<CategoryResponseDTO> result =
                 service.searchCategories(
                         "Elect",
-                        PageRequest.of(0,10));
+                        pageable);
 
-        assertEquals(1,
+        assertEquals(
+                1,
                 result.getContent().size());
 
         verify(repository)
                 .findByNameContainingIgnoreCase(
-                        eq("Elect"),
-                        any(PageRequest.class));
+                        "Elect",
+                        pageable);
     }
 
     @Test
-    @DisplayName("Should return category by id")
+    @DisplayName("getCategoryById")
     void getCategoryById_shouldReturnCategory() {
 
         when(repository.findById(1L))
@@ -136,10 +152,17 @@ class CategoryServiceTest {
         assertEquals(
                 "Electronics",
                 result.getName());
+
+        assertEquals(
+                1,
+                result.getProductCount());
+
+        verify(repository)
+                .findById(1L);
     }
 
     @Test
-    @DisplayName("Should throw exception when category not found")
+    @DisplayName("getCategoryById not found")
     void getCategoryById_shouldThrowException() {
 
         when(repository.findById(100L))
@@ -148,11 +171,13 @@ class CategoryServiceTest {
         assertThrows(
                 CategoryNotFoundException.class,
                 () -> service.getCategoryById(100L));
-    }
 
-    @Test
-    @DisplayName("Should create category")
-    void createCategory_shouldReturnCreatedCategory() {
+        verify(repository)
+                .findById(100L);
+    }
+        @Test
+    @DisplayName("createCategory")
+    void createCategory_shouldSaveCategory() {
 
         when(mapper.toEntity(request))
                 .thenReturn(category);
@@ -167,7 +192,6 @@ class CategoryServiceTest {
                 service.createCategory(request);
 
         assertNotNull(result);
-
         assertEquals(
                 "Electronics",
                 result.getName());
@@ -177,33 +201,74 @@ class CategoryServiceTest {
     }
 
     @Test
-    @DisplayName("Should update category")
-    void updateCategory_shouldReturnUpdatedCategory() {
+    @DisplayName("updateCategory")
+    void updateCategory_shouldUpdateCategory() {
+
+        CategoryRequestDTO updateRequest =
+                new CategoryRequestDTO(
+                        "Electronics Updated",
+                        "Updated Description");
+
+        Category updatedCategory =
+                Category.builder()
+                        .id(1L)
+                        .name("Electronics Updated")
+                        .description("Updated Description")
+                        .products(category.getProducts())
+                        .build();
+
+        CategoryResponseDTO updatedResponse =
+                new CategoryResponseDTO(
+                        1L,
+                        "Electronics Updated",
+                        "Updated Description",
+                        1);
 
         when(repository.findById(1L))
                 .thenReturn(Optional.of(category));
 
         when(repository.save(any(Category.class)))
-                .thenReturn(category);
+                .thenReturn(updatedCategory);
 
-        when(mapper.toResponse(category))
-                .thenReturn(response);
+        when(mapper.toResponse(updatedCategory))
+                .thenReturn(updatedResponse);
 
         CategoryResponseDTO result =
                 service.updateCategory(
                         1L,
-                        request);
+                        updateRequest);
 
         assertEquals(
-                "Electronics",
+                "Electronics Updated",
                 result.getName());
 
+        assertEquals(
+                "Updated Description",
+                result.getDescription());
+
         verify(repository)
+                .save(category);
+    }
+
+    @Test
+    @DisplayName("updateCategory not found")
+    void updateCategory_shouldThrowException() {
+
+        when(repository.findById(100L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                CategoryNotFoundException.class,
+                () -> service.updateCategory(
+                        100L,
+                        request));
+
+        verify(repository, never())
                 .save(any(Category.class));
     }
 
     @Test
-    @DisplayName("Should delete category")
+    @DisplayName("deleteCategory")
     void deleteCategory_shouldDeleteCategory() {
 
         when(repository.findById(1L))
@@ -217,5 +282,20 @@ class CategoryServiceTest {
 
         verify(repository)
                 .delete(category);
+    }
+
+    @Test
+    @DisplayName("deleteCategory not found")
+    void deleteCategory_shouldThrowException() {
+
+        when(repository.findById(100L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                CategoryNotFoundException.class,
+                () -> service.deleteCategory(100L));
+
+        verify(repository, never())
+                .delete(any(Category.class));
     }
 }
