@@ -20,11 +20,16 @@ public class CategoryMapper {
 
     public CategoryResponseDTO toResponse(Category category) {
 
+        int productCount = category.getProducts() == null
+                ? 0
+                : category.getProducts().size();
+
         return new CategoryResponseDTO(
 
                 category.getId(),
                 category.getName(),
-                category.getDescription()
+                category.getDescription(),
+                productCount
         );
     }
 }
