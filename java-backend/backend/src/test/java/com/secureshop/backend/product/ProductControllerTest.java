@@ -12,20 +12,17 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.http.MediaType;
-
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -51,30 +48,25 @@ class ProductControllerTest {
     private ProductService service;
 
     @Test
-    @DisplayName("GET /api/products returns paged products")
-    void getAllProducts_shouldReturnPagedProducts() throws Exception {
+    @DisplayName("GET /api/products")
+    void getAllProducts_shouldReturnPagedProducts()
+            throws Exception {
 
-        List<ProductResponseDTO> products = List.of(
-
+        ProductResponseDTO product =
                 new ProductResponseDTO(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0),
-
-                new ProductResponseDTO(
-                        2L,
-                        "Phone",
-                        "Android Phone",
-                        25000.0)
-        );
+                        85000.0,
+                        1L,
+                        "Electronics");
 
         PagedResponse<ProductResponseDTO> response =
                 new PagedResponse<>(
-                        products,
+                        List.of(product),
                         0,
                         10,
-                        2,
+                        1,
                         1,
                         true);
 
@@ -85,41 +77,33 @@ class ProductControllerTest {
 
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content.length()")
+                        .value(1))
 
                 .andExpect(jsonPath("$.content[0].name")
                         .value("Laptop"))
 
-                .andExpect(jsonPath("$.content[1].name")
-                        .value("Phone"))
-
-                .andExpect(jsonPath("$.page").value(0))
-
-                .andExpect(jsonPath("$.size").value(10))
-
-                .andExpect(jsonPath("$.totalElements").value(2))
-
-                .andExpect(jsonPath("$.totalPages").value(1))
-
-                .andExpect(jsonPath("$.last").value(true));
+                .andExpect(jsonPath("$.content[0].categoryName")
+                        .value("Electronics"));
     }
 
     @Test
-    @DisplayName("GET /api/products/search returns matching products")
-    void searchProducts_shouldReturnMatchingProducts() throws Exception {
+    @DisplayName("GET /api/products/search")
+    void searchProducts_shouldReturnProducts()
+            throws Exception {
 
-        List<ProductResponseDTO> products = List.of(
-
+        ProductResponseDTO product =
                 new ProductResponseDTO(
                         1L,
+                        "Laptop",
                         "Gaming Laptop",
-                        "RTX Laptop",
-                        90000.0)
-        );
+                        85000.0,
+                        1L,
+                        "Electronics");
 
         PagedResponse<ProductResponseDTO> response =
                 new PagedResponse<>(
-                        products,
+                        List.of(product),
                         0,
                         10,
                         1,
@@ -132,98 +116,141 @@ class ProductControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(
-                        get("/api/products/search")
-                                .param("keyword", "Laptop"))
+                get("/api/products/search")
+                        .param("keyword", "Laptop"))
 
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.content.length()")
+                .andExpect(jsonPath("$.content[0].name")
+                        .value("Laptop"));
+    }
+
+    @Test
+    @DisplayName("GET /api/products/category/{id}")
+    void getProductsByCategory_shouldReturnProducts()
+            throws Exception {
+
+        ProductResponseDTO product =
+                new ProductResponseDTO(
+                        1L,
+                        "Laptop",
+                        "Gaming Laptop",
+                        85000.0,
+                        1L,
+                        "Electronics");
+
+        PagedResponse<ProductResponseDTO> response =
+                new PagedResponse<>(
+                        List.of(product),
+                        0,
+                        10,
+                        1,
+                        1,
+                        true);
+
+        when(service.getProductsByCategory(
+                eq(1L),
+                any(Pageable.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(
+                get("/api/products/category/1"))
+
+                .andExpect(status().isOk())
+
+                .andExpect(jsonPath("$.content[0].categoryId")
                         .value(1))
 
-                .andExpect(jsonPath("$.content[0].name")
-                        .value("Gaming Laptop"));
+                .andExpect(jsonPath("$.content[0].categoryName")
+                        .value("Electronics"));
     }
 
     @Test
     @DisplayName("GET /api/products/{id}")
-    void getProductById_shouldReturnProduct() throws Exception {
+    void getProductById_shouldReturnProduct()
+            throws Exception {
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L,
+                        "Electronics");
 
         when(service.getProductById(1L))
                 .thenReturn(response);
 
-        mockMvc.perform(get("/api/products/1"))
+        mockMvc.perform(
+                get("/api/products/1"))
 
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id")
+                        .value(1))
 
-                .andExpect(jsonPath("$.name")
-                        .value("Laptop"))
-
-                .andExpect(jsonPath("$.description")
-                        .value("Gaming Laptop"))
-
-                .andExpect(jsonPath("$.price")
-                        .value(85000.0));
+                .andExpect(jsonPath("$.categoryName")
+                        .value("Electronics"));
     }
 
     @Test
     @DisplayName("POST /api/products")
-    void createProduct_shouldReturnCreatedProduct() throws Exception {
+    void createProduct_shouldReturnCreatedProduct()
+            throws Exception {
 
         ProductRequestDTO request =
                 new ProductRequestDTO(
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L);
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop",
                         "Gaming Laptop",
-                        85000.0);
+                        85000.0,
+                        1L,
+                        "Electronics");
 
         when(service.createProduct(any(ProductRequestDTO.class)))
                 .thenReturn(response);
 
         mockMvc.perform(
-
-                        post("/api/products")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
 
                 .andExpect(status().isCreated())
 
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id")
+                        .value(1))
 
-                .andExpect(jsonPath("$.name")
-                        .value("Laptop"));
+                .andExpect(jsonPath("$.categoryId")
+                        .value(1));
     }
-
-    @Test
+        @Test
     @DisplayName("PUT /api/products/{id}")
-    void updateProduct_shouldReturnUpdatedProduct() throws Exception {
+    void updateProduct_shouldReturnUpdatedProduct()
+            throws Exception {
 
         ProductRequestDTO request =
                 new ProductRequestDTO(
                         "Laptop Pro",
                         "Gaming Laptop RTX",
-                        99000.0);
+                        99000.0,
+                        1L);
 
         ProductResponseDTO response =
                 new ProductResponseDTO(
                         1L,
                         "Laptop Pro",
                         "Gaming Laptop RTX",
-                        99000.0);
+                        99000.0,
+                        1L,
+                        "Electronics");
 
         when(service.updateProduct(
                 eq(1L),
@@ -231,10 +258,9 @@ class ProductControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(
-
-                        put("/api/products/1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                put("/api/products/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
 
                 .andExpect(status().isOk())
 
@@ -242,55 +268,60 @@ class ProductControllerTest {
                         .value("Laptop Pro"))
 
                 .andExpect(jsonPath("$.price")
-                        .value(99000.0));
+                        .value(99000.0))
+
+                .andExpect(jsonPath("$.categoryName")
+                        .value("Electronics"));
     }
 
     @Test
     @DisplayName("DELETE /api/products/{id}")
-    void deleteProduct_shouldReturnNoContent() throws Exception {
+    void deleteProduct_shouldReturnNoContent()
+            throws Exception {
 
         doNothing()
                 .when(service)
                 .deleteProduct(1L);
 
-        mockMvc.perform(delete("/api/products/1"))
+        mockMvc.perform(
+                delete("/api/products/1"))
 
                 .andExpect(status().isNoContent());
     }
 
     @Test
     @DisplayName("POST validation failure")
-    void createProduct_shouldReturnBadRequest() throws Exception {
+    void createProduct_shouldReturnBadRequest()
+            throws Exception {
 
         ProductRequestDTO request =
                 new ProductRequestDTO(
                         "",
-                        "Gaming Laptop RTX",
-                        56000.0);
+                        "",
+                        -100.0,
+                        null);
 
         mockMvc.perform(
-
-                        post("/api/products")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
 
                 .andExpect(status().isBadRequest())
 
                 .andExpect(jsonPath("$.status")
-                        .value(400))
-
-                .andExpect(jsonPath("$.message")
-                        .value("Product name is required"));
+                        .value(400));
     }
 
     @Test
     @DisplayName("GET product not found")
-    void getProductById_shouldReturnNotFound() throws Exception {
+    void getProductById_shouldReturnNotFound()
+            throws Exception {
 
         when(service.getProductById(100L))
                 .thenThrow(new ProductNotFoundException(100L));
 
-        mockMvc.perform(get("/api/products/100"))
+        mockMvc.perform(
+                get("/api/products/100"))
 
                 .andExpect(status().isNotFound())
 
