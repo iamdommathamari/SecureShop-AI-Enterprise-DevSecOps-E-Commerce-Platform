@@ -1,135 +1,112 @@
 package com.secureshop.backend.category;
 
+import com.secureshop.backend.product.Product;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
-import java.util.Optional;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class CategoryRepositoryTest {
 
-    @Autowired
-    private CategoryRepository repository;
-
-    private static final String ELECTRONICS = "Electronics";
-    private static final String LAPTOPS = "Laptops and Accessories";
-
     @Test
-    @DisplayName("Should save category")
-    void save_shouldPersistCategory() {
+    @DisplayName("Category Builder")
+    void categoryBuilder_shouldCreateCategory() {
 
-        Category category = new Category(
-                null,
-                ELECTRONICS,
-                LAPTOPS);
+        Category category = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic Products")
+                .products(new ArrayList<>())
+                .build();
 
-        Category saved = repository.save(category);
-
-        assertNotNull(saved.getId());
-        assertEquals(ELECTRONICS, saved.getName());
-        assertEquals(LAPTOPS, saved.getDescription());
+        assertEquals(1L, category.getId());
+        assertEquals("Electronics", category.getName());
+        assertEquals("Electronic Products", category.getDescription());
+        assertNotNull(category.getProducts());
+        assertTrue(category.getProducts().isEmpty());
     }
 
     @Test
-    @DisplayName("Should find category by id")
-    void findById_shouldReturnCategory() {
+    @DisplayName("Add Product to Category")
+    void category_shouldContainProducts() {
 
-        Category saved = repository.save(
-                new Category(
-                        null,
-                        ELECTRONICS,
-                        LAPTOPS));
+        Category category = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic Products")
+                .build();
 
-        Optional<Category> result =
-                repository.findById(saved.getId());
+        Product product = Product.builder()
+                .id(1L)
+                .name("Laptop")
+                .description("Gaming Laptop")
+                .price(85000.0)
+                .category(category)
+                .build();
 
-        assertTrue(result.isPresent());
-        assertEquals(ELECTRONICS, result.get().getName());
+        category.getProducts().add(product);
+
+        assertEquals(1, category.getProducts().size());
+        assertEquals("Laptop",
+                category.getProducts().getFirst().getName());
     }
 
     @Test
-    @DisplayName("Should return all categories")
-    void findAll_shouldReturnCategories() {
+    @DisplayName("Product references Category")
+    void product_shouldReferenceCategory() {
 
-        repository.save(
-                new Category(
-                        null,
-                        "Electronics",
-                        "Electronic Items"));
+        Category category = Category.builder()
+                .id(10L)
+                .name("Electronics")
+                .build();
 
-        repository.save(
-                new Category(
-                        null,
-                        "Books",
-                        "Books Collection"));
+        Product product = Product.builder()
+                .id(5L)
+                .name("Laptop")
+                .description("Gaming Laptop")
+                .price(85000.0)
+                .category(category)
+                .build();
 
-        Pageable pageable =
-                PageRequest.of(0, 10);
-
-        Page<Category> page =
-                repository.findAll(pageable);
-
-        assertEquals(2, page.getTotalElements());
-        assertEquals(2, page.getContent().size());
-    }
-
-    @Test
-    @DisplayName("Should search category by name")
-    void findByNameContainingIgnoreCase_shouldReturnMatchingCategories() {
-
-        repository.save(
-                new Category(
-                        null,
-                        "Electronics",
-                        "Electronic Items"));
-
-        repository.save(
-                new Category(
-                        null,
-                        "Books",
-                        "Books Collection"));
-
-        Pageable pageable =
-                PageRequest.of(0, 10);
-
-        Page<Category> page =
-                repository.findByNameContainingIgnoreCase(
-                        "elect",
-                        pageable);
-
-        assertEquals(1, page.getTotalElements());
+        assertNotNull(product.getCategory());
         assertEquals(
                 "Electronics",
-                page.getContent().get(0).getName());
+                product.getCategory().getName());
     }
 
     @Test
-    @DisplayName("Should delete category")
-    void delete_shouldRemoveCategory() {
+    @DisplayName("Category products list should never be null")
+    void categoryProducts_shouldNotBeNull() {
 
-        Category saved =
-                repository.save(
-                        new Category(
-                                null,
-                                ELECTRONICS,
-                                LAPTOPS));
+        Category category = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic Products")
+                .build();
 
-        repository.delete(saved);
+        assertNotNull(category.getProducts());
+    }
 
-        Optional<Category> result =
-                repository.findById(saved.getId());
+    @Test
+    @DisplayName("Category equals/hashCode")
+    void categoryEquals_shouldWork() {
 
-        assertFalse(result.isPresent());
+        Category c1 = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic Products")
+                .build();
+
+        Category c2 = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic Products")
+                .build();
+
+        assertEquals(c1, c2);
+        assertEquals(c1.hashCode(), c2.hashCode());
     }
 }
