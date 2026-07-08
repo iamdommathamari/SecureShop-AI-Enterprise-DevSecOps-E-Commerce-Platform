@@ -194,8 +194,8 @@ class UserServiceTest {
         when(repository.findById(1L))
                 .thenReturn(Optional.of(user));
 
-        when(repository.existsByEmail(request.getEmail()))
-                .thenReturn(false);
+        //when(repository.existsByEmail(request.getEmail()))    //line 197
+               // .thenReturn(false);
 
         when(passwordEncoder.encode(request.getPassword()))
                 .thenReturn("encodedPassword");
