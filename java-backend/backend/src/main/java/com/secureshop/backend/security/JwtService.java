@@ -1,66 +1,117 @@
 package com.secureshop.backend.security;
 
-import com.secureshop.backend.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 @Service
-@RequiredArgsConstructor
+@Slf4j
 public class JwtService {
 
-    private final JwtProperties properties;
+    @Value("${jwt.secret}")
+    private String secret;
 
-    private SecretKey getSigningKey() {
+    @Value("${jwt.expiration}")
+    private long expiration;
 
-        byte[] keyBytes =
-                Decoders.BASE64.decode(properties.secret());
+    /**
+     * Generate JWT token
+     */
+    public String generateToken(UserDetails userDetails) {
 
-        return Keys.hmacShaKeyFor(keyBytes);
+        return generateToken(new HashMap<>(), userDetails);
     }
 
-    public String generateToken(String username) {
+    /**
+     * Generate JWT with extra claims
+     */
+    public String generateToken(
+            Map<String, Object> extraClaims,
+            UserDetails userDetails) {
 
-        Date now = new Date();
-
-        Date expiry =
-                new Date(now.getTime() + properties.expiration());
+        log.debug("Generating JWT for {}", userDetails.getUsername());
 
         return Jwts.builder()
-                .subject(username)
-                .issuedAt(now)
-                .expiration(expiry)
+                .claims(extraClaims)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
     }
 
+    /**
+     * Extract username
+     */
     public String extractUsername(String token) {
 
-        return extractClaims(token).getSubject();
+        return extractClaim(
+                token,
+                Claims::getSubject);
     }
 
+    /**
+     * Extract expiration
+     */
+    public Date extractExpiration(String token) {
+
+        return extractClaim(
+                token,
+                Claims::getExpiration);
+    }
+
+    /**
+     * Generic claim extractor
+     */
+    public <T> T extractClaim(
+            String token,
+            Function<Claims, T> claimsResolver) {
+
+        Claims claims = extractAllClaims(token);
+
+        return claimsResolver.apply(claims);
+    }
+
+    /**
+     * Validate token
+     */
     public boolean isTokenValid(
             String token,
-            String username) {
+            UserDetails userDetails) {
 
-        return username.equals(extractUsername(token))
+        String username = extractUsername(token);
+
+        return username.equals(userDetails.getUsername())
                 && !isTokenExpired(token);
     }
 
+    /**
+     * Check expiration
+     */
     private boolean isTokenExpired(String token) {
 
-        return extractClaims(token)
-                .getExpiration()
+        return extractExpiration(token)
                 .before(new Date());
     }
 
-    private Claims extractClaims(String token) {
+    /**
+     * Extract claims
+     */
+    private Claims extractAllClaims(String token) {
 
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -68,4 +119,16 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    /**
+     * Signing key
+     */
+    private SecretKey getSigningKey() {
+
+        byte[] keyBytes =
+                Decoders.BASE64.decode(secret);
+
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
 }

@@ -1,0 +1,14 @@
+spring:
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/secureshop
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+jwt:
+  secret: 4c7a2a7a95e5e68d4e95d9f56bc6fd7631d7c2f11d649d79dcb758a4a0d8bc5df0a4b2748e6767d4d1a6fbdaf64dce11
+  expiration: 86400000
