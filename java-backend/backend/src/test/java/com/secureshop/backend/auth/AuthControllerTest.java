@@ -2,7 +2,7 @@ package com.secureshop.backend.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.secureshop.backend.security.SecurityConfig;
+import com.secureshop.backend.config.SecurityConfig;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

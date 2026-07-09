@@ -20,8 +20,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -48,40 +46,44 @@ class AuthenticationServiceTest {
     private AuthenticationServiceImpl service;
 
     private RegisterRequest registerRequest;
+
     private LoginRequest loginRequest;
+
     private User user;
+
     private UserDetailsImpl userDetails;
 
     @BeforeEach
     void setUp() {
 
-        registerRequest = RegisterRequest.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@example.com")
-                .password("password123")
-                .build();
+        registerRequest = new RegisterRequest(
+        "John",
+        "Doe",
+        "john@example.com",
+        "password123"
+        );
 
-        loginRequest = LoginRequest.builder()
-                .email("john@example.com")
-                .password("password123")
-                .build();
+        loginRequest = new LoginRequest(
+        "john@example.com",
+        "password123"
+        );
 
-        user = User.builder()
-                .id(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@example.com")
-                .password("encodedPassword")
-                .role(Role.ROLE_CUSTOMER)
-                .enabled(true)
-                .build();
+        user =
+                User.builder()
+                        .id(1L)
+                        .firstName("John")
+                        .lastName("Doe")
+                        .email("john@example.com")
+                        .password("encodedPassword")
+                        .role(Role.ROLE_CUSTOMER)
+                        .enabled(true)
+                        .build();
 
         userDetails = new UserDetailsImpl(user);
     }
 
     @Test
-    @DisplayName("Register User")
+    @DisplayName("register should create new user")
     void register_shouldCreateUser() {
 
         when(userRepository.existsByEmail(registerRequest.getEmail()))
@@ -96,15 +98,20 @@ class AuthenticationServiceTest {
         RegisterResponse response =
                 service.register(registerRequest);
 
+        assertThat(response).isNotNull();
+
         assertThat(response.getEmail())
-                .isEqualTo(user.getEmail());
+                .isEqualTo("john@example.com");
+
+        assertThat(response.getRole())
+                .isEqualTo("ROLE_CUSTOMER");
 
         verify(userRepository).save(any(User.class));
     }
 
     @Test
-    @DisplayName("Register Duplicate Email")
-    void register_shouldThrowException() {
+    @DisplayName("register should throw when email already exists")
+    void register_shouldThrowDuplicateEmail() {
 
         when(userRepository.existsByEmail(registerRequest.getEmail()))
                 .thenReturn(true);
@@ -117,10 +124,11 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    @DisplayName("Login")
-    void login_shouldReturnJwtToken() {
+    @DisplayName("login should authenticate user")
+    void login_shouldAuthenticate() {
 
-        when(authenticationManager.authenticate(any()))
+        when(authenticationManager.authenticate(any(
+                UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
 
         when(authentication.getPrincipal())
@@ -132,13 +140,15 @@ class AuthenticationServiceTest {
         LoginResponse response =
                 service.login(loginRequest);
 
+        assertThat(response).isNotNull();
+
         assertThat(response.getToken())
                 .isEqualTo("jwt-token");
 
         assertThat(response.getEmail())
                 .isEqualTo("john@example.com");
 
-        verify(jwtService).generateToken(userDetails);
+        assertThat(response.getRole())
+                .isEqualTo("ROLE_CUSTOMER");
     }
-
 }
