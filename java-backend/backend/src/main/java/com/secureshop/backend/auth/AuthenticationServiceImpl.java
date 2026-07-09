@@ -1,5 +1,6 @@
 package com.secureshop.backend.auth;
 
+import com.secureshop.backend.exception.UserAlreadyExistsException;
 import com.secureshop.backend.security.JwtService;
 import com.secureshop.backend.security.UserDetailsImpl;
 import com.secureshop.backend.user.Role;
@@ -34,8 +35,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Registering user {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException(
-                    "Email already registered.");
+            throw new UserAlreadyExistsException(request.getEmail());
         }
 
         User user = User.builder()
