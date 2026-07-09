@@ -3,6 +3,7 @@ package com.secureshop.backend.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.secureshop.backend.security.UserDetailsImpl;
+import com.secureshop.backend.security.WithMockCustomUser;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -118,14 +119,21 @@ class AuthControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "john@example.com")
-    @DisplayName("GET /api/auth/me")
-    void me_shouldReturnAuthenticatedUser()
-            throws Exception {
+@WithMockCustomUser
+@DisplayName("GET /api/auth/me")
+void me_shouldReturnAuthenticatedUser()
+        throws Exception {
 
-        mockMvc.perform(get("/api/auth/me"))
-                .andExpect(status().isOk());
-    }
+    mockMvc.perform(get("/api/auth/me"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.firstName").value("John"))
+            .andExpect(jsonPath("$.lastName").value("Doe"))
+            .andExpect(jsonPath("$.email")
+                    .value("john@example.com"))
+            .andExpect(jsonPath("$.role")
+                    .value("ROLE_CUSTOMER"));
+}
 
     @Test
     @DisplayName("POST register validation")
