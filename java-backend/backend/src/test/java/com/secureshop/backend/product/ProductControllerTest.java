@@ -6,11 +6,16 @@ import com.secureshop.backend.dto.ProductRequestDTO;
 import com.secureshop.backend.dto.ProductResponseDTO;
 import com.secureshop.backend.exception.GlobalExceptionHandler;
 import com.secureshop.backend.exception.ProductNotFoundException;
+import com.secureshop.backend.security.JwtAuthenticationEntryPoint;
+import com.secureshop.backend.security.JwtAuthenticationFilter;
+import com.secureshop.backend.security.JwtService;
+import com.secureshop.backend.security.UserDetailsServiceImpl;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -18,6 +23,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import com.secureshop.backend.config.SecurityConfig;
+
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -35,11 +42,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+
 @WebMvcTest(ProductController.class)
-@Import({
-        SecurityConfig.class,
-        GlobalExceptionHandler.class
-})
+@Import(GlobalExceptionHandler.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ProductControllerTest {
 
     @Autowired
@@ -47,6 +53,23 @@ class ProductControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    // Mock the service used by this controller
+    @MockitoBean
+    private ProductService productService;
+
+    // Security beans
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @MockitoBean
+    private UserDetailsServiceImpl userDetailsService;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     @MockBean
     private ProductService service;

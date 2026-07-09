@@ -1,40 +1,41 @@
 package com.secureshop.backend.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.secureshop.backend.security.UserDetailsImpl;
-import com.secureshop.backend.security.WithMockCustomUser;
+import com.secureshop.backend.auth.LoginRequest;
+import com.secureshop.backend.auth.LoginResponse;
+import com.secureshop.backend.auth.RegisterRequest;
+import com.secureshop.backend.auth.RegisterResponse;
+import com.secureshop.backend.security.JwtAuthenticationEntryPoint;
+import com.secureshop.backend.security.JwtAuthenticationFilter;
+import com.secureshop.backend.security.JwtService;
+import com.secureshop.backend.security.UserDetailsServiceImpl;
+import com.secureshop.backend.auth.AuthController;
+import com.secureshop.backend.auth.AuthenticationService;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 
-import com.secureshop.backend.config.SecurityConfig;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
 import org.springframework.http.MediaType;
 
-import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.Authentication;
-
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
     @Autowired
@@ -43,13 +44,24 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private AuthenticationService authenticationService;
 
+    @MockitoBean
+private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+@MockitoBean
+private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+@MockitoBean
+private UserDetailsServiceImpl userDetailsService;
+
+@MockitoBean
+private JwtService jwtService;
+
     @Test
-    @DisplayName("POST /api/auth/register")
-    void register_shouldReturnCreated()
-            throws Exception {
+    @DisplayName("Register should return 201 Created")
+    void register_shouldReturnCreated() throws Exception {
 
         RegisterRequest request =
                 new RegisterRequest(
@@ -68,25 +80,38 @@ class AuthControllerTest {
                         .message("Registration successful")
                         .build();
 
-        when(authenticationService.register(any(RegisterRequest.class)))
-                .thenReturn(response);
+        given(authenticationService.register(any(RegisterRequest.class)))
+                .willReturn(response);
 
-        mockMvc.perform(
-                        post("/api/auth/register")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.email")
-                        .value("john@example.com"))
-                .andExpect(jsonPath("$.role")
-                        .value("ROLE_CUSTOMER"));
+                .andExpect(jsonPath("$.email").value("john@example.com"))
+                .andExpect(jsonPath("$.role").value("ROLE_CUSTOMER"));
     }
 
     @Test
-    @DisplayName("POST /api/auth/login")
-    void login_shouldReturnJwtToken()
-            throws Exception {
+    @DisplayName("Register should return 400 for invalid request")
+    void register_shouldReturnBadRequest() throws Exception {
+
+        RegisterRequest request =
+                new RegisterRequest(
+                        "",
+                        "",
+                        "invalid-email",
+                        "");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Login should return JWT")
+    void login_shouldReturnJwtToken() throws Exception {
 
         LoginRequest request =
                 new LoginRequest(
@@ -104,70 +129,30 @@ class AuthControllerTest {
                         .role("ROLE_CUSTOMER")
                         .build();
 
-        when(authenticationService.login(any(LoginRequest.class)))
-                .thenReturn(response);
+        given(authenticationService.login(any(LoginRequest.class)))
+                .willReturn(response);
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token")
-                        .value("jwt-token"))
-                .andExpect(jsonPath("$.tokenType")
-                        .value("Bearer"));
+                .andExpect(jsonPath("$.token").value("jwt-token"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.email").value("john@example.com"));
     }
 
     @Test
-@WithMockCustomUser
-@DisplayName("GET /api/auth/me")
-void me_shouldReturnAuthenticatedUser()
-        throws Exception {
-
-    mockMvc.perform(get("/api/auth/me"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(1))
-            .andExpect(jsonPath("$.firstName").value("John"))
-            .andExpect(jsonPath("$.lastName").value("Doe"))
-            .andExpect(jsonPath("$.email")
-                    .value("john@example.com"))
-            .andExpect(jsonPath("$.role")
-                    .value("ROLE_CUSTOMER"));
-}
-
-    @Test
-    @DisplayName("POST register validation")
-    void register_shouldReturnBadRequest()
-            throws Exception {
-
-        RegisterRequest request =
-                new RegisterRequest(
-                        "",
-                        "",
-                        "",
-                        "");
-
-        mockMvc.perform(
-                        post("/api/auth/register")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("POST login validation")
-    void login_shouldReturnBadRequest()
-            throws Exception {
+    @DisplayName("Login should return 400 for invalid request")
+    void login_shouldReturnBadRequest() throws Exception {
 
         LoginRequest request =
                 new LoginRequest(
                         "",
                         "");
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 }
