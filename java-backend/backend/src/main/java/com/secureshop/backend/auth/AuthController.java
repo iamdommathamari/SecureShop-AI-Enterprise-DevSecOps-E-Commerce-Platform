@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import org.springframework.security.core.Authentication;
 
@@ -43,26 +44,22 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<RegisterResponse> me(
-            Authentication authentication) {
+public ResponseEntity<RegisterResponse> me(
+        @AuthenticationPrincipal UserDetailsImpl user) {
 
-        UserDetailsImpl user =
-                (UserDetailsImpl) authentication.getPrincipal();
+    RegisterResponse response =
+            RegisterResponse.builder()
+                    .id(user.getId())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .email(user.getUsername())
+                    .role(user.getAuthorities()
+                            .iterator()
+                            .next()
+                            .getAuthority())
+                    .message("Authenticated user")
+                    .build();
 
-        RegisterResponse response =
-                RegisterResponse.builder()
-                        .id(user.getId())
-                        .firstName(user.getFirstName())
-                        .lastName(user.getLastName())
-                        .email(user.getUsername())
-                        .role(
-                                user.getAuthorities()
-                                        .iterator()
-                                        .next()
-                                        .getAuthority())
-                        .message("Authenticated user")
-                        .build();
-
-        return ResponseEntity.ok(response);
-    }
+    return ResponseEntity.ok(response);
+}
 }
