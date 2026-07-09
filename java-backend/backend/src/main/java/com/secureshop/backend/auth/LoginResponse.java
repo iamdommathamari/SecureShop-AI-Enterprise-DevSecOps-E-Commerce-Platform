@@ -1,15 +1,27 @@
 package com.secureshop.backend.auth;
 
-import java.time.Instant;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public record LoginResponse(
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoginResponse {
 
-        String accessToken,
+    private String token;
 
-        String tokenType,
+    private String tokenType;
 
-        Long expiresIn,
+    private Long userId;
 
-        Instant issuedAt
-) {
+    private String firstName;
+
+    private String lastName;
+
+    private String email;
+
+    private String role;
 }
