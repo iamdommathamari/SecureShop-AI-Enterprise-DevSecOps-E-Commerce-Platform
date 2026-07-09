@@ -44,5 +44,5 @@ public class User {
 
     @Builder.Default
     @Column(nullable = false)
-    private Boolean enabled = true;
+    private boolean enabled = true;
 }
